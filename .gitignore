@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+env/
+.venv/
+
+# Entorno
+.env
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Base de datos
+*.db
+*.sqlite3
+
+# Uploads / resultados temporales
+uploads/
+results/
+temp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# PDFs de prueba
+*.pdf
+!requirements.txt
+
+# Logs
+*.log

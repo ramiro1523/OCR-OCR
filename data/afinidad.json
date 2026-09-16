@@ -1,0 +1,298 @@
+{
+  "config": {
+    "peso_grupo": 3,
+    "peso_palabra_clave": 1,
+    "peso_regla_especial": 5,
+    "peso_tipo_relacionado": 2,
+    "umbral_minimo": 2
+  },
+
+  "grupos": {
+    "construccion": {
+      "nombre": "Construcción e Infraestructura",
+      "carreras": [
+        "Ing Civil",
+        "Arquitectura",
+        "Diseño de Interiores",
+        "Topografía",
+        "Ing de Minas",
+        "Ing Industrial"
+      ]
+    },
+    "salud": {
+      "nombre": "Salud y Bienestar",
+      "carreras": [
+        "Medicina",
+        "Enfermería",
+        "Obstetricia",
+        "Odontología",
+        "Nutricionista",
+        "Tecnología Médica",
+        "Ciencias de la Salud",
+        "Farmacia",
+        "Psicología"
+      ]
+    },
+    "negocios": {
+      "nombre": "Negocios y Finanzas",
+      "carreras": [
+        "Administración",
+        "Administración de Empresas",
+        "Contabilidad",
+        "Economía",
+        "Finanzas",
+        "Marketing",
+        "Negocios Internacionales"
+      ]
+    },
+    "tecnologia": {
+      "nombre": "Tecnología e Ingeniería",
+      "carreras": [
+        "Ing de Sistemas",
+        "Ing Eléctrica",
+        "Ing Electrónica",
+        "Ing Mecánica",
+        "Ing Metalúrgica",
+        "Ing Mecatrónica",
+        "Ing Química",
+        "Ing Automotriz",
+        "Ing de Sonido",
+        "Tec en Informática",
+        "Informática",
+        "Mecánica Automotriz",
+        "Mecatrónica",
+        "Metalúrgica",
+        "Industrial",
+        "Soldadura Industrial",
+        "Operador de Maquinarias Pesadas",
+        "Estadística",
+        "Matemática",
+        "Física",
+        "Química"
+      ]
+    },
+    "arte": {
+      "nombre": "Arte y Diseño",
+      "carreras": [
+        "Artista Profesional",
+        "Artes Visuales",
+        "Artes Plásticas",
+        "Diseño Gráfico",
+        "Diseño de Modas",
+        "Dibujo y Pintura",
+        "Actuación",
+        "Profesional Artístico Músico",
+        "Fotografía",
+        "Literatura",
+        "Cosmetología"
+      ]
+    },
+    "alimentos": {
+      "nombre": "Alimentos y Gastronomía",
+      "carreras": [
+        "Gastronomía",
+        "Gastronomía/Repostería",
+        "Industria Alimentaria",
+        "Ing de Industrias Alimentarias"
+      ]
+    },
+    "agro": {
+      "nombre": "Agro y Ambiente",
+      "carreras": [
+        "Agronomía",
+        "Zootecnia",
+        "Veterinaria",
+        "Ing Forestal",
+        "Ing Ambiental",
+        "Biología"
+      ]
+    },
+    "social": {
+      "nombre": "Ciencias Sociales y Educación",
+      "carreras": [
+        "Educación",
+        "Educación Artística",
+        "Pedagogía",
+        "Sociología",
+        "Asistente Social",
+        "Historia",
+        "Antropología",
+        "Arqueología",
+        "Filosofía"
+      ]
+    },
+    "legal": {
+      "nombre": "Legal y Seguridad",
+      "carreras": [
+        "Derecho Criminalística",
+        "PNP",
+        "Fuerzas Armadas"
+      ]
+    },
+    "medios": {
+      "nombre": "Comunicación y Medios",
+      "carreras": [
+        "C. Comunicación",
+        "Publicidad"
+      ]
+    },
+    "turismo": {
+      "nombre": "Turismo y Servicios",
+      "carreras": [
+        "Guía Oficial de Turismo",
+        "Auxiliar de Vuelo",
+        "Aviación"
+      ]
+    },
+    "ciencia": {
+      "nombre": "Ciencia e Investigación",
+      "carreras": [
+        "Astronomía",
+        "Tec en Laboratorio"
+      ]
+    }
+  },
+
+  "palabras_clave": {
+    "Ing Civil": ["ing", "civil", "construccion", "obra", "estructura"],
+    "Arquitectura": ["arquitectura", "construccion", "diseno", "espacio", "edificacion"],
+    "Diseño de Interiores": ["diseno", "interiores", "espacio", "decoracion", "arquitectura"],
+    "Topografía": ["topografia", "medicion", "terreno", "construccion"],
+    "Ing de Minas": ["ing", "minas", "extraccion", "recursos"],
+    "Ing Industrial": ["ing", "industrial", "procesos", "produccion", "optimizacion"],
+    "Medicina": ["medicina", "salud", "clinica", "diagnostico", "paciente"],
+    "Enfermería": ["enfermeria", "salud", "cuidado", "paciente", "clinica"],
+    "Obstetricia": ["obstetricia", "salud", "maternidad", "embarazo"],
+    "Odontología": ["odontologia", "salud", "dental", "bucal"],
+    "Nutricionista": ["nutricion", "salud", "alimento", "dieta"],
+    "Tecnología Médica": ["tecnologia", "medica", "salud", "laboratorio"],
+    "Ciencias de la Salud": ["ciencias", "salud", "bienestar", "prevencion"],
+    "Farmacia": ["farmacia", "medicamento", "salud", "quimica"],
+    "Psicología": ["psicologia", "salud", "mental", "comportamiento", "social"],
+    "Administración": ["administracion", "gestion", "empresa", "negocio", "organizacion"],
+    "Administración de Empresas": ["administracion", "empresas", "gestion", "negocio"],
+    "Contabilidad": ["contabilidad", "finanzas", "auditoria", "tributario", "registro"],
+    "Economía": ["economia", "finanzas", "mercado", "negocio", "dinero"],
+    "Finanzas": ["finanzas", "dinero", "inversion", "banco", "economia"],
+    "Marketing": ["marketing", "ventas", "publicidad", "comercial", "mercado"],
+    "Negocios Internacionales": ["negocios", "internacional", "comercio", "global"],
+    "Ing de Sistemas": ["ing", "sistemas", "software", "computacion", "tecnologia"],
+    "Ing Eléctrica": ["ing", "electrica", "energia", "circuito"],
+    "Ing Electrónica": ["ing", "electronica", "circuito", "tecnologia"],
+    "Ing Mecánica": ["ing", "mecanica", "maquina", "motor", "industrial"],
+    "Ing Metalúrgica": ["ing", "metalurgica", "metal", "industrial"],
+    "Ing Mecatrónica": ["ing", "mecatronica", "robotica", "automatizacion", "tecnologia"],
+    "Ing Química": ["ing", "quimica", "proceso", "industrial"],
+    "Ing Automotriz": ["ing", "automotriz", "vehiculo", "motor", "mecanica"],
+    "Ing de Sonido": ["ing", "sonido", "audio", "medios", "tecnologia"],
+    "Tec en Informática": ["tecnologia", "informatica", "computacion", "software"],
+    "Informática": ["informatica", "computacion", "software", "tecnologia"],
+    "Mecánica Automotriz": ["mecanica", "automotriz", "vehiculo", "motor"],
+    "Mecatrónica": ["mecatronica", "robotica", "automatizacion"],
+    "Metalúrgica": ["metalurgica", "metal", "industrial"],
+    "Industrial": ["industrial", "produccion", "proceso", "fabrica"],
+    "Soldadura Industrial": ["soldadura", "industrial", "metal", "construccion"],
+    "Operador de Maquinarias Pesadas": ["operador", "maquinaria", "industrial", "construccion"],
+    "Estadística": ["estadistica", "datos", "matematica", "analisis"],
+    "Matemática": ["matematica", "calculo", "datos", "analisis"],
+    "Física": ["fisica", "ciencia", "calculo", "analisis"],
+    "Química": ["quimica", "ciencia", "laboratorio", "analisis"],
+    "Artista Profesional": ["artista", "arte", "creatividad", "expresion"],
+    "Artes Visuales": ["artes", "visual", "diseno", "creatividad", "imagen"],
+    "Artes Plásticas": ["artes", "plastica", "creatividad", "escultura"],
+    "Diseño Gráfico": ["diseno", "grafico", "visual", "imagen", "creatividad"],
+    "Diseño de Modas": ["diseno", "moda", "ropa", "creatividad", "estilo"],
+    "Dibujo y Pintura": ["dibujo", "pintura", "arte", "creatividad"],
+    "Actuación": ["actuacion", "teatro", "arte", "escenario"],
+    "Profesional Artístico Músico": ["musica", "artistico", "arte", "sonido"],
+    "Fotografía": ["fotografia", "imagen", "visual", "arte", "medios"],
+    "Literatura": ["literatura", "escritura", "arte", "texto"],
+    "Cosmetología": ["cosmetologia", "belleza", "estetica", "cuidado"],
+    "Gastronomía": ["gastronomia", "cocina", "alimento", "chef"],
+    "Gastronomía/Repostería": ["gastronomia", "reposteria", "cocina", "alimento"],
+    "Industria Alimentaria": ["industria", "alimento", "produccion", "proceso"],
+    "Ing de Industrias Alimentarias": ["ing", "industria", "alimento", "proceso"],
+    "Agronomía": ["agronomia", "agro", "cultivo", "campo", "tierra"],
+    "Zootecnia": ["zootecnia", "animal", "ganado", "agro"],
+    "Veterinaria": ["veterinaria", "animal", "salud", "agro"],
+    "Ing Forestal": ["ing", "forestal", "bosque", "ambiente"],
+    "Ing Ambiental": ["ing", "ambiental", "ambiente", "ecologia", "bienestar"],
+    "Biología": ["biologia", "ciencia", "vida", "ambiente"],
+    "Educación": ["educacion", "ensenanza", "pedagogia", "social"],
+    "Educación Artística": ["educacion", "artistica", "arte", "ensenanza"],
+    "Pedagogía": ["pedagogia", "educacion", "ensenanza", "social"],
+    "Sociología": ["sociologia", "social", "sociedad", "comunidad"],
+    "Asistente Social": ["asistente", "social", "comunidad", "ayuda"],
+    "Historia": ["historia", "social", "pasado", "cultura"],
+    "Antropología": ["antropologia", "social", "cultura", "sociedad"],
+    "Arqueología": ["arqueologia", "social", "cultura", "historia"],
+    "Filosofía": ["filosofia", "social", "pensamiento", "reflexion"],
+    "Derecho Criminalística": ["derecho", "criminalistica", "legal", "justicia"],
+    "PNP": ["pnp", "policia", "seguridad", "legal"],
+    "Fuerzas Armadas": ["fuerzas", "armadas", "militar", "seguridad"],
+    "C. Comunicación": ["comunicacion", "medios", "periodismo", "social"],
+    "Publicidad": ["publicidad", "medios", "marketing", "comunicacion"],
+    "Guía Oficial de Turismo": ["guia", "turismo", "viaje", "servicio"],
+    "Auxiliar de Vuelo": ["auxiliar", "vuelo", "aviacion", "servicio"],
+    "Aviación": ["aviacion", "vuelo", "aereo", "transporte"],
+    "Astronomía": ["astronomia", "ciencia", "espacio", "universo"],
+    "Tec en Laboratorio": ["tecnologia", "laboratorio", "ciencia", "analisis"]
+  },
+
+  "reglas_especiales": [
+    {"par": ["Ing Civil", "Arquitectura"], "categoria": "construccion", "razon": "Diseño y construcción de espacios"},
+    {"par": ["Ing de Sonido", "Diseño Gráfico"], "categoria": "medios_visuales", "razon": "Medios audiovisuales"},
+    {"par": ["Ing Ambiental", "Ciencias de la Salud"], "categoria": "bienestar", "razon": "Bienestar humano y ambiental"},
+    {"par": ["Marketing", "Administración"], "categoria": "negocios", "razon": "Gestión empresarial"},
+    {"par": ["Contabilidad", "Finanzas"], "categoria": "finanzas", "razon": "Área financiera"},
+    {"par": ["Gastronomía", "Industria Alimentaria"], "categoria": "alimentos", "razon": "Producción alimentaria"},
+    {"par": ["Gastronomía/Repostería", "Industria Alimentaria"], "categoria": "alimentos", "razon": "Producción alimentaria"},
+    {"par": ["Agronomía", "Veterinaria"], "categoria": "agro", "razon": "Área agropecuaria"},
+    {"par": ["Psicología", "Educación"], "categoria": "social", "razon": "Desarrollo humano"},
+    {"par": ["Diseño Gráfico", "Fotografía"], "categoria": "arte", "razon": "Artes visuales"},
+    {"par": ["Arquitectura", "Diseño de Interiores"], "categoria": "construccion", "razon": "Diseño de espacios"},
+    {"par": ["Ing Civil", "Ing Industrial"], "categoria": "construccion", "razon": "Proyectos de infraestructura"},
+    {"par": ["Medicina", "Enfermería"], "categoria": "salud", "razon": "Atención médica"},
+    {"par": ["Medicina", "Obstetricia"], "categoria": "salud", "razon": "Atención médica"},
+    {"par": ["Enfermería", "Obstetricia"], "categoria": "salud", "razon": "Cuidado del paciente"},
+    {"par": ["Educación", "Pedagogía"], "categoria": "social", "razon": "Enseñanza"},
+    {"par": ["Sociología", "Antropología"], "categoria": "social", "razon": "Estudio de la sociedad"},
+    {"par": ["Historia", "Arqueología"], "categoria": "social", "razon": "Estudio del pasado"},
+    {"par": ["PNP", "Fuerzas Armadas"], "categoria": "legal", "razon": "Seguridad nacional"},
+    {"par": ["Derecho Criminalística", "PNP"], "categoria": "legal", "razon": "Justicia y seguridad"},
+    {"par": ["C. Comunicación", "Publicidad"], "categoria": "medios", "razon": "Comunicación y medios"},
+    {"par": ["Guía Oficial de Turismo", "Aviación"], "categoria": "turismo", "razon": "Servicios turísticos y de viaje"},
+    {"par": ["Auxiliar de Vuelo", "Aviación"], "categoria": "turismo", "razon": "Servicios aeronáuticos"},
+    {"par": ["Ing de Sistemas", "Informática"], "categoria": "tecnologia", "razon": "Tecnología de la información"},
+    {"par": ["Ing de Sistemas", "Tec en Informática"], "categoria": "tecnologia", "razon": "Tecnología de la información"},
+    {"par": ["Informática", "Tec en Informática"], "categoria": "tecnologia", "razon": "Tecnología de la información"},
+    {"par": ["Ing Mecánica", "Ing Mecatrónica"], "categoria": "tecnologia", "razon": "Ingeniería mecánica y automatización"},
+    {"par": ["Ing Mecánica", "Mecánica Automotriz"], "categoria": "tecnologia", "razon": "Mecánica aplicada"},
+    {"par": ["Ing Mecánica", "Ing Automotriz"], "categoria": "tecnologia", "razon": "Ingeniería mecánica automotriz"},
+    {"par": ["Marketing", "Publicidad"], "categoria": "negocios", "razon": "Comercialización y publicidad"},
+    {"par": ["Marketing", "C. Comunicación"], "categoria": "negocios", "razon": "Comunicación comercial"},
+    {"par": ["Contabilidad", "Administración"], "categoria": "negocios", "razon": "Gestión administrativa y contable"},
+    {"par": ["Economía", "Finanzas"], "categoria": "negocios", "razon": "Análisis financiero"},
+    {"par": ["Negocios Internacionales", "Administración"], "categoria": "negocios", "razon": "Gestión empresarial"},
+    {"par": ["Negocios Internacionales", "Marketing"], "categoria": "negocios", "razon": "Comercio y mercado"},
+    {"par": ["Estadística", "Matemática"], "categoria": "ciencia", "razon": "Análisis cuantitativo"},
+    {"par": ["Física", "Matemática"], "categoria": "ciencia", "razon": "Ciencias exactas"},
+    {"par": ["Química", "Farmacia"], "categoria": "ciencia", "razon": "Ciencias químicas y farmacéuticas"},
+    {"par": ["Biología", "Agronomía"], "categoria": "agro", "razon": "Ciencias biológicas y agro"},
+    {"par": ["Biología", "Veterinaria"], "categoria": "agro", "razon": "Ciencias biológicas y animales"},
+    {"par": ["Artista Profesional", "Artes Visuales"], "categoria": "arte", "razon": "Expresión artística visual"},
+    {"par": ["Artes Visuales", "Diseño Gráfico"], "categoria": "arte", "razon": "Artes visuales y diseño"},
+    {"par": ["Diseño de Modas", "Cosmetología"], "categoria": "arte", "razon": "Estética y moda"},
+    {"par": ["Profesional Artístico Músico", "Ing de Sonido"], "categoria": "arte", "razon": "Música y audio"}
+  ],
+
+  "tipos_relacionados": {
+    "LIDERAZGO": ["ORGANIZADO", "EMPRENDEDOR"],
+    "TÉCNICO MECÁNICO": ["INVESTIGATIVO", "ARTÍSTICO"],
+    "SOCIAL": ["INVESTIGATIVO", "ARTÍSTICO"],
+    "ORGANIZADO": ["LIDERAZGO", "EMPRENDEDOR"],
+    "ARTÍSTICO": ["SOCIAL", "TÉCNICO MECÁNICO"],
+    "EMPRENDEDOR": ["LIDERAZGO", "ORGANIZADO"],
+    "INVESTIGATIVO": ["TÉCNICO MECÁNICO", "SOCIAL"]
+  }
+}
