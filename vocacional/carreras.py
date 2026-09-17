@@ -7,25 +7,37 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 with open(DATA_DIR / "carreras.json", encoding="utf-8") as f:
     CARRERAS = json.load(f)
 
-with open(DATA_DIR / "afinidad.json", encoding="utf-8") as f:
+# Si existe INVESTIGACIÓN o INVESTIGATIVO, asegurar sinergia
+if "INVESTIGATIVO" in CARRERAS and "INVESTIGACIÓN" not in CARRERAS:
+    CARRERAS["INVESTIGACIÓN"] = CARRERAS["INVESTIGATIVO"]
+elif "INVESTIGACIÓN" in CARRERAS and "INVESTIGATIVO" not in CARRERAS:
+    CARRERAS["INVESTIGATIVO"] = CARRERAS["INVESTIGACIÓN"]
+
+# Cargar matriz de afinidad (afinidad.json o relaciones_carreras.json)
+afinidad_path = DATA_DIR / "afinidad.json"
+if not afinidad_path.exists():
+    afinidad_path = DATA_DIR / "relaciones_carreras.json"
+
+with open(afinidad_path, encoding="utf-8") as f:
     AFINIDAD = json.load(f)
 
 
 # ─────────────────────────────────────────────
-# ÍNDICES PRE-CALCULADOS (para velocidad)
+# ÍNDICES PRE-CALCULADOS
 # ─────────────────────────────────────────────
 
 def _construir_indice_grupos():
-    """Carrera → lista de grupos a los que pertenece."""
+    """Carrera → lista de grupos con su nombre."""
     indice = {}
-    for grupo, data in AFINIDAD["grupos"].items():
-        for carrera in data["carreras"]:
-            indice.setdefault(carrera, []).append(grupo)
+    for grupo_id, data in AFINIDAD.get("grupos", {}).items():
+        nombre = data.get("nombre", grupo_id.capitalize())
+        for carrera in data.get("carreras", []):
+            indice.setdefault(carrera, []).append({"id": grupo_id, "nombre": nombre})
     return indice
 
 
 def _construir_indice_tipos():
-    """Carrera → tipo vocacional al que pertenece (el primero que la contenga)."""
+    """Carrera → tipos vocacionales a los que pertenece."""
     indice = {}
     for tipo, carreras in CARRERAS.items():
         for carrera in carreras:
@@ -34,12 +46,14 @@ def _construir_indice_tipos():
 
 
 def _construir_indice_reglas():
-    """Par ordenado (a,b) → True si hay regla especial."""
-    indice = set()
-    for regla in AFINIDAD["reglas_especiales"]:
-        a, b = regla["par"]
-        indice.add((a, b))
-        indice.add((b, a))
+    """Par ordenado (a,b) → diccionario de la regla especial."""
+    indice = {}
+    for regla in AFINIDAD.get("reglas_especiales", []):
+        par = regla.get("par", [])
+        if len(par) == 2:
+            a, b = par[0], par[1]
+            indice[(a, b)] = regla
+            indice[(b, a)] = regla
     return indice
 
 
@@ -47,79 +61,100 @@ INDICE_GRUPOS = _construir_indice_grupos()
 INDICE_TIPOS = _construir_indice_tipos()
 INDICE_REGLAS = _construir_indice_reglas()
 
-PALABRAS = AFINIDAD["palabras_clave"]
-TIPOS_REL = AFINIDAD["tipos_relacionados"]
-CONFIG = AFINIDAD["config"]
+PALABRAS = AFINIDAD.get("palabras_clave", {})
+TIPOS_REL = AFINIDAD.get("tipos_relacionados", {})
+CONFIG = AFINIDAD.get("config", {
+    "peso_grupo": 3,
+    "peso_palabra_clave": 1,
+    "peso_regla_especial": 5,
+    "peso_tipo_relacionado": 2,
+    "umbral_minimo": 2
+})
 
 
 # ─────────────────────────────────────────────
-# ALGORITMO HÍBRIDO
+# ALGORITMO DE AFINIDAD TEMÁTICA
 # ─────────────────────────────────────────────
 
-def puntuar_afinidad(carrera_a: str, carrera_b: str, tipo_a: str, tipo_b: str) -> int:
+def puntuar_afinidad(carrera_a: str, carrera_b: str, tipo_a: str, tipo_b: str) -> tuple[int, str]:
     """
-    Calcula la puntuación de afinidad entre 2 carreras.
+    Calcula la puntuación de afinidad y determina la relación temática.
     
-    Componentes:
-      1. Grupos temáticos comunes        × peso_grupo (3)
-      2. Palabras clave comunes          × peso_palabra_clave (1)
-      3. Regla especial (par directo)    × peso_regla_especial (5)
-      4. Tipos vocacionales relacionados × peso_tipo_relacionado (2)
+    Retorna: (puntaje, relacion_tematica)
     """
     puntaje = 0
+    relacion = "General"
     
-    # 1. Grupos comunes
-    grupos_a = set(INDICE_GRUPOS.get(carrera_a, []))
-    grupos_b = set(INDICE_GRUPOS.get(carrera_b, []))
-    puntaje += len(grupos_a & grupos_b) * CONFIG["peso_grupo"]
+    # 1. Regla especial directa (máxima prioridad)
+    if (carrera_a, carrera_b) in INDICE_REGLAS:
+        regla = INDICE_REGLAS[(carrera_a, carrera_b)]
+        puntaje += CONFIG.get("peso_regla_especial", 5) * 2  # bono extra por match directo
+        relacion = regla.get("razon", regla.get("categoria", "Afinidad directa"))
     
-    # 2. Palabras clave comunes
+    # 2. Grupos temáticos comunes
+    grupos_a = {g["id"]: g["nombre"] for g in INDICE_GRUPOS.get(carrera_a, [])}
+    grupos_b = {g["id"]: g["nombre"] for g in INDICE_GRUPOS.get(carrera_b, [])}
+    comunes = set(grupos_a.keys()) & set(grupos_b.keys())
+    
+    if comunes:
+        puntaje += len(comunes) * CONFIG.get("peso_grupo", 3)
+        if relacion == "General":
+            primer_grupo = next(iter(comunes))
+            relacion = grupos_a[primer_grupo]
+    
+    # 3. Palabras clave comunes
     palabras_a = set(PALABRAS.get(carrera_a, []))
     palabras_b = set(PALABRAS.get(carrera_b, []))
-    puntaje += len(palabras_a & palabras_b) * CONFIG["peso_palabra_clave"]
-    
-    # 3. Regla especial
-    if (carrera_a, carrera_b) in INDICE_REGLAS:
-        puntaje += CONFIG["peso_regla_especial"]
+    coincidencias = palabras_a & palabras_b
+    if coincidencias:
+        puntaje += len(coincidencias) * CONFIG.get("peso_palabra_clave", 1)
+        if relacion == "General":
+            relacion = f"Área {', '.join(list(coincidencias)[:2])}"
     
     # 4. Tipos vocacionales relacionados
     if tipo_b in TIPOS_REL.get(tipo_a, []):
-        puntaje += CONFIG["peso_tipo_relacionado"]
+        puntaje += CONFIG.get("peso_tipo_relacionado", 2)
     
-    return puntaje
+    return puntaje, relacion
 
 
 def seleccionar_4_carreras(tipo_top1: str, tipo_top2: str) -> dict:
     """
-    Dado el Top 2 de tipos vocacionales, devuelve 4 carreras afines:
-      - 2 principales (el mejor par)
-      - 2 respaldo (el segundo mejor par)
+    Dado el Top 2 de tipos vocacionales, selecciona 4 carreras afines:
+      - 2 principales (el mejor par temático con 1 carrera del Top 1 y 1 del Top 2)
+      - 2 de respaldo (el segundo mejor par temático con 1 carrera del Top 1 y 1 del Top 2)
     
     Retorna: {
-      "principales": [{"carrera": "X", "tipo": "T1", "puntaje": N}, ...],
-      "respaldo":    [{"carrera": "Y", "tipo": "T2", "puntaje": N}, ...]
+      "principales": [{"carrera": "...", "tipo": "...", "relacion": "...", "puntaje": N}, ...],
+      "respaldo":    [{"carrera": "...", "tipo": "...", "relacion": "...", "puntaje": N}, ...]
     }
     """
     carreras_a = CARRERAS.get(tipo_top1, [])
     carreras_b = CARRERAS.get(tipo_top2, [])
     
-    # Generar todos los pares posibles
+    # Fallback de normalización
+    if not carreras_a and tipo_top1.startswith("INVESTIG"):
+        carreras_a = CARRERAS.get("INVESTIGATIVO", CARRERAS.get("INVESTIGACIÓN", []))
+    if not carreras_b and tipo_top2.startswith("INVESTIG"):
+        carreras_b = CARRERAS.get("INVESTIGATIVO", CARRERAS.get("INVESTIGACIÓN", []))
+    
+    # Evaluar todos los pares posibles (Top 1 x Top 2)
     pares = []
     for ca, cb in product(carreras_a, carreras_b):
         if ca == cb:
             continue
-        puntaje = puntuar_afinidad(ca, cb, tipo_top1, tipo_top2)
-        if puntaje >= CONFIG["umbral_minimo"]:
-            pares.append({
-                "carrera_a": ca,
-                "carrera_b": cb,
-                "puntaje": puntaje
-            })
+        pts, rel = puntuar_afinidad(ca, cb, tipo_top1, tipo_top2)
+        pares.append({
+            "carrera_a": ca,
+            "carrera_b": cb,
+            "puntaje": pts,
+            "relacion": rel
+        })
     
     # Ordenar por puntaje descendente
     pares.sort(key=lambda x: x["puntaje"], reverse=True)
     
-    # Tomar los 2 mejores pares evitando repetir carreras
+    # Tomar los 2 mejores pares sin repetir carreras
     seleccionados = []
     carreras_usadas = set()
     
@@ -132,33 +167,40 @@ def seleccionar_4_carreras(tipo_top1: str, tipo_top2: str) -> dict:
         if len(seleccionados) == 2:
             break
     
-    # Si no se encontraron 2 pares, rellenar con las primeras del tipo
-    while len(seleccionados) < 2:
-        for c in carreras_a + carreras_b:
-            if c not in carreras_usadas:
+    # Fallback si no hay suficientes pares
+    if len(seleccionados) < 2:
+        for ca in carreras_a:
+            if ca in carreras_usadas:
+                continue
+            for cb in carreras_b:
+                if cb in carreras_usadas or cb == ca:
+                    continue
+                pts, rel = puntuar_afinidad(ca, cb, tipo_top1, tipo_top2)
                 seleccionados.append({
-                    "carrera_a": c,
-                    "carrera_b": "—",
-                    "puntaje": 0
+                    "carrera_a": ca,
+                    "carrera_b": cb,
+                    "puntaje": pts,
+                    "relacion": rel or "Afinidad complementaria"
                 })
-                carreras_usadas.add(c)
+                carreras_usadas.add(ca)
+                carreras_usadas.add(cb)
                 break
-        else:
-            break
+            if len(seleccionados) == 2:
+                break
     
-    # Formatear resultado
+    # Formatear salida estructurada
     principales = []
     respaldo = []
     
     if len(seleccionados) >= 1:
         p = seleccionados[0]
-        principales.append({"carrera": p["carrera_a"], "tipo": tipo_top1, "puntaje": p["puntaje"]})
-        principales.append({"carrera": p["carrera_b"], "tipo": tipo_top2, "puntaje": p["puntaje"]})
+        principales.append({"carrera": p["carrera_a"], "tipo": tipo_top1, "relacion": p["relacion"], "puntaje": p["puntaje"]})
+        principales.append({"carrera": p["carrera_b"], "tipo": tipo_top2, "relacion": p["relacion"], "puntaje": p["puntaje"]})
     
     if len(seleccionados) >= 2:
         r = seleccionados[1]
-        respaldo.append({"carrera": r["carrera_a"], "tipo": tipo_top1, "puntaje": r["puntaje"]})
-        respaldo.append({"carrera": r["carrera_b"], "tipo": tipo_top2, "puntaje": r["puntaje"]})
+        respaldo.append({"carrera": r["carrera_a"], "tipo": tipo_top1, "relacion": r["relacion"], "puntaje": r["puntaje"]})
+        respaldo.append({"carrera": r["carrera_b"], "tipo": tipo_top2, "relacion": r["relacion"], "puntaje": r["puntaje"]})
     
     return {
         "principales": principales,
