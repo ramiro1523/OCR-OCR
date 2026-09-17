@@ -1,401 +1,517 @@
 """
-Pipeline OCR principal para formularios IEPPO.
+Pipeline OCR Principal para formularios IEPPO de 1 página.
 
-Layout del formulario (1 página, 3 tablas lado a lado):
-  ┌───────────────┬─────────────────────┬──────────────────┐
-  │ Parte 1       │ Parte 2             │ Parte 3          │
-  │ Estilos (E)   │ Preferencias (P)    │ Habilidad (H)    │
-  │ E1 – E33      │ P1 – P47            │ H1 – H38         │
-  │ Col: Nº|No|Sí │ Col: Nº|No|Sí       │ Col: Nº|No|Sí    │
-  └───────────────┴─────────────────────┴──────────────────┘
+Arquitectura robusta con ANÁLISIS POR BLOQUE:
+  - Cada bloque (E, P, H) calcula su propio umbral adaptativo.
+  - Detección de bloques completamente vacíos.
+  - Clasificación multi-señal por celda con votación.
+  - Detección de bleed por concentración en bordes.
 
-Cada tabla tiene filas con 3 celdas funcionales:
-  Celda 0 → etiqueta (Nº)
-  Celda 1 → casilla "No" (No se parece / No me interesa / No soy hábil)
-  Celda 2 → casilla "Sí" (Se parece / Me interesa / Soy hábil)
+Ventaja principal: si un bloque está vacío (P y H vacíos, E marcado),
+el bloque vacío se detecta y se marca como VACIO, sin importar la
+calidad del escaneo.
 """
 
-import logging
-from typing import Union, Dict, Any, List
 import io
+import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+from typing import Union, Dict, Any, List
+
+import cv2
 import numpy as np
+import pytesseract
 
 from ocr.pdf_to_image import pdf_a_imagenes
-from ocr.preprocess import preprocesar_imagen
-from ocr.marks import clasificar_item
-from vocacional.utils import generar_items_vacios, obtener_bloques, auditar_marcas
+from ocr.preprocess import preprocesar_imagen, binarizar
+from ocr.tables import detectar_3_tablas_geometria
+from ocr.rows import obtener_filas_y_columnas_tabla
+from ocr.marks import analizar_trazo_celda_multisenal
+from vocacional.utils import generar_items_vacios, auditar_marcas
 
 logger = logging.getLogger(__name__)
 
 
-# ─────────────────────────────────────────────────────────────
-# MAPEO DE ETIQUETAS ORDENADAS
-# ─────────────────────────────────────────────────────────────
+# =============================================================================
+# CONSTANTES
+# =============================================================================
 
-def _etiquetas_ordenadas() -> List[str]:
-    """Devuelve los 118 ítems en el orden correcto del formulario."""
-    bloques = obtener_bloques()
-    resultado = []
-    for items in bloques.values():
-        resultado.extend(items)
-    return resultado  # E1..E33, P1..P47, H1..H38
+DPI_PROCESAMIENTO = 300
+TOTAL_ITEMS_ESPERADOS = 118
+PORCENTAJE_EXITO_TOTAL = 1.00
+PORCENTAJE_EXITO_PARCIAL = 0.93
+TIMEOUT_SEGUNDOS = 60
+UMBRAL_NITIDEZ_MINIMA = 100
+TAMANO_MAXIMO_OSD = 2000
+CONFIANZA_MINIMA_OSD = 5.0
+
+# -----------------------------------------------------------------------------
+# Detección de bloque VACÍO
+# -----------------------------------------------------------------------------
+# Si un bloque tiene p75 < P75_VACIO Y p50 < P50_VACIO → bloque vacío
+P75_VACIO = 0.040
+P50_VACIO = 0.025
+
+# Si un bloque tiene p25 > P25_MARCADO → bloque marcado (umbral bajo)
+P25_MARCADO = 0.070
+
+# Clamp del umbral final por bloque
+UMBRAL_MIN = 0.012
+UMBRAL_MAX = 0.030
+
+# -----------------------------------------------------------------------------
+# Clasificación multi-señal
+# -----------------------------------------------------------------------------
+# Umbrales para "marca real" (una marca real tiene densidad Y centro Y trazo)
+MARCA_DENS_FACTOR = 1.0          # dens_total >= umbral * 1.0
+MARCA_CENTRO_FACTOR = 0.5        # dens_centro >= umbral * 0.5
+MARCA_STROKE_MIN = 0.20          # stroke_ratio >= 0.20
+
+# Ratio para desambiguación cuando ambas celdas tienen densidad alta
+RATIO_DESAMBIGUACION = 1.35
+
+# Detección de bleed
+BLEED_BORDE_FACTOR = 1.5
+BLEED_CENTRO_FACTOR = 0.5
 
 
-# ─────────────────────────────────────────────────────────────
-# DETECCIÓN DE FILAS EN UNA REGIÓN DE TABLA
-# ─────────────────────────────────────────────────────────────
+# =============================================================================
+# UTILIDADES
+# =============================================================================
 
-def _detectar_filas_tabla(
-    roi_binaria: np.ndarray,
-    n_items_esperados: int,
-    min_altura_fila: int = 8,
-    max_altura_fila: int = 60
-) -> List[Dict[str, Any]]:
-    """
-    Detecta las filas de datos dentro de una región de tabla binarizada.
-    Agrupa contornos por posición Y para identificar filas.
-    
-    Retorna lista de filas: [{"y_centro": int, "y1": int, "y2": int}, ...]
-    ordenadas de arriba hacia abajo.
-    """
-    import cv2
+def _respuesta_error(marcas, detalles, mensaje, paginas=0, total_procesados=0):
+    return {
+        "exito": False, "marcas": marcas, "detalles": detalles,
+        "mensaje": mensaje, "audit": auditar_marcas(marcas),
+        "paginas": paginas, "total_procesados": total_procesados,
+    }
 
-    h_roi, w_roi = roi_binaria.shape[:2]
 
-    # Proyección horizontal: sumar píxeles negros (tinta) por fila de píxeles
-    # Líneas horizontales = alta concentración de tinta
-    inv = cv2.bitwise_not(roi_binaria)
+def _verificar_orientacion_pdf(imagen_np: np.ndarray) -> np.ndarray:
+    try:
+        h, w = imagen_np.shape[:2]
+        if max(h, w) > TAMANO_MAXIMO_OSD:
+            escala = TAMANO_MAXIMO_OSD / max(h, w)
+            imagen_peq = cv2.resize(imagen_np, None, fx=escala, fy=escala,
+                                     interpolation=cv2.INTER_AREA)
+        else:
+            imagen_peq = imagen_np
 
-    # Usar morfología para aislar líneas horizontales
-    longitud_linea = max(int(w_roi * 0.3), 20)
-    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (longitud_linea, 1))
-    lineas_h = cv2.morphologyEx(inv, cv2.MORPH_OPEN, kernel_h)
+        if len(imagen_peq.shape) == 3:
+            gris_peq = cv2.cvtColor(imagen_peq, cv2.COLOR_BGR2GRAY)
+        else:
+            gris_peq = imagen_peq
 
-    # Proyección horizontal: sumar píxeles blancos por fila
-    proyeccion = np.sum(lineas_h, axis=1).astype(np.float32)
-
-    # Normalizar
-    if proyeccion.max() > 0:
-        proyeccion = proyeccion / proyeccion.max()
-
-    # Encontrar posiciones Y donde hay líneas divisorias (umbral > 0.4)
-    umbral = 0.4
-    en_linea = proyeccion > umbral
-    
-    # Detectar transiciones: inicio y fin de cada línea
-    separadores_y = []
-    en_bloque = False
-    inicio = 0
-    for y, val in enumerate(en_linea):
-        if val and not en_bloque:
-            en_bloque = True
-            inicio = y
-        elif not val and en_bloque:
-            en_bloque = False
-            centro = (inicio + y) // 2
-            separadores_y.append(centro)
-
-    if en_bloque:
-        separadores_y.append((inicio + h_roi) // 2)
-
-    # Construir filas a partir de los separadores
-    filas = []
-    if len(separadores_y) >= 2:
-        # Agregar borde superior e inferior si no están
-        if separadores_y[0] > min_altura_fila:
-            separadores_y = [0] + separadores_y
-        if separadores_y[-1] < h_roi - min_altura_fila:
-            separadores_y = separadores_y + [h_roi]
-
-        for i in range(len(separadores_y) - 1):
-            y1 = separadores_y[i]
-            y2 = separadores_y[i + 1]
-            altura = y2 - y1
-            if min_altura_fila <= altura <= max_altura_fila:
-                filas.append({
-                    "y1": y1,
-                    "y2": y2,
-                    "y_centro": (y1 + y2) // 2,
-                    "altura": altura
-                })
-
-    # Si no se detectaron suficientes filas con líneas, usar división uniforme
-    if len(filas) < max(3, n_items_esperados // 3):
-        logger.warning(
-            "Pocas filas detectadas (%d), dividiendo uniformemente en %d",
-            len(filas), n_items_esperados
+        _, binaria_peq = cv2.threshold(
+            gris_peq, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
         )
-        filas = []
-        # Estimar zona de datos (saltar encabezado ~15% superior)
-        offset_header = int(h_roi * 0.15)
-        zona_datos = h_roi - offset_header
-        altura_fila = max(8, zona_datos // n_items_esperados)
-        
-        for i in range(n_items_esperados):
-            y1 = offset_header + i * altura_fila
-            y2 = min(h_roi, y1 + altura_fila)
-            filas.append({
-                "y1": y1,
-                "y2": y2,
-                "y_centro": (y1 + y2) // 2,
-                "altura": altura_fila
-            })
 
-    return filas[:n_items_esperados]
+        osd = pytesseract.image_to_osd(
+            binaria_peq, output_type=pytesseract.Output.DICT
+        )
+        rotacion = osd.get("rotate", 0)
+        confianza = float(osd.get("orientation_conf", 0))
+
+        if confianza < CONFIANZA_MINIMA_OSD:
+            logger.warning("OSD baja confianza (%.1f). No se rota.", confianza)
+            return imagen_np
+
+        if rotacion == 90:
+            return cv2.rotate(imagen_np, cv2.ROTATE_90_CLOCKWISE)
+        elif rotacion == 180:
+            return cv2.rotate(imagen_np, cv2.ROTATE_180)
+        elif rotacion == 270:
+            return cv2.rotate(imagen_np, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    except Exception as e:
+        logger.warning("OSD falló (%s). Continuando sin rotar.", type(e).__name__)
+
+    return imagen_np
 
 
-# ─────────────────────────────────────────────────────────────
-# EXTRACCIÓN DE CELDAS NO/SÍ EN UNA FILA
-# ─────────────────────────────────────────────────────────────
+def _validar_binarizacion(binaria, gris):
+    pixeles_tinta = int(np.sum(binaria == 0))
+    densidad = pixeles_tinta / binaria.size
+    nitidez = float(cv2.Laplacian(gris, cv2.CV_64F).var())
 
-def _extraer_casillas_fila(
-    roi_fila: np.ndarray,
-    n_columnas_total: int = 3
-) -> tuple[np.ndarray, np.ndarray]:
+    if densidad < 0.005:
+        return False, f"densidad muy baja ({densidad:.3f})"
+    if densidad > 0.70:
+        return False, f"densidad muy alta ({densidad:.3f})"
+    if nitidez < UMBRAL_NITIDEZ_MINIMA:
+        return False, f"imagen borrosa (nitidez={nitidez:.1f})"
+
+    return True, f"OK"
+
+
+def _validar_estructura_tablas(tablas):
+    if len(tablas) < 3:
+        return False, f"solo {len(tablas)}/3 tablas"
+    for i, t in enumerate(tablas):
+        if not isinstance(t, dict) or "x" not in t or "roi_binaria" not in t:
+            return False, f"tabla {i} estructura inválida"
+        if t["roi_binaria"] is None or t["roi_binaria"].size == 0:
+            return False, f"tabla {i} ROI vacía"
+    return True, "OK"
+
+
+# =============================================================================
+# ANÁLISIS POR BLOQUE
+# =============================================================================
+
+def _analizar_bloque(
+    celdas_bloque: Dict[str, Dict[str, Dict[str, float]]],
+    prefijo: str
+) -> Dict[str, Any]:
     """
-    Divide horizontalmente una fila en columnas y extrae las celdas No y Sí.
-    
-    Layout estándar IEPPO: [N° | No | Sí]  (3 columnas)
-    - Columna 0 (izquierda): etiqueta (Nº)  → no se usa
-    - Columna 1 (centro): casilla "No"
-    - Columna 2 (derecha): casilla "Sí"
-    
-    Si la fila tiene diferente ancho, adapta proporciones.
-    """
-    h, w = roi_fila.shape[:2]
-    ancho_col = w // n_columnas_total
-
-    # Proporciones aproximadas observadas en el formulario IEPPO real:
-    # Nº ocupa ~30% del ancho, No ~35%, Sí ~35%
-    x_no = int(w * 0.30)
-    x_si = int(w * 0.65)
-    w_casilla = int(w * 0.33)
-
-    celda_no = roi_fila[:, x_no: x_no + w_casilla]
-    celda_si = roi_fila[:, x_si: x_si + w_casilla]
-
-    return celda_no, celda_si
-
-
-# ─────────────────────────────────────────────────────────────
-# PROCESAR UNA TABLA COMPLETA (bloque E, P o H)
-# ─────────────────────────────────────────────────────────────
-
-def _procesar_bloque_tabla(
-    roi_tabla: np.ndarray,
-    etiquetas: List[str],
-    marcas: dict,
-    detalles: dict
-) -> int:
-    """
-    Procesa una columna de tabla del formulario IEPPO (E, P o H).
-    Detecta filas, clasifica cada casilla No/Sí, y GUARDA el resultado en marcas.
-    
-    Retorna: número de ítems procesados.
-    """
-    n_esperados = len(etiquetas)
-    filas = _detectar_filas_tabla(roi_tabla, n_esperados)
-
-    procesados = 0
-    for i, fila in enumerate(filas):
-        if i >= n_esperados:
-            break
-
-        etiqueta = etiquetas[i]
-        y1, y2 = fila["y1"], fila["y2"]
-
-        if y2 <= y1 or (y2 - y1) < 3:
-            continue
-
-        roi_fila = roi_tabla[y1:y2, :]
-        if roi_fila.size == 0:
-            continue
-
-        celda_no, celda_si = _extraer_casillas_fila(roi_fila)
-
-        if celda_no.size == 0 or celda_si.size == 0:
-            continue
-
-        # ✅ CORRECCIÓN DEL BUG: guardar resultado en marcas
-        resultado = clasificar_item(celda_no, celda_si)
-        marcas[etiqueta] = resultado["opcion"]   # "si" | "no" | "ambos" | "vacio"
-        detalles[etiqueta] = resultado
-        procesados += 1
-
-    return procesados
-
-
-# ─────────────────────────────────────────────────────────────
-# DIVIDIR PÁGINA EN 3 BLOQUES (columnas de tablas)
-# ─────────────────────────────────────────────────────────────
-
-def _dividir_en_3_columnas(
-    imagen_binaria: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Divide la página en 3 regiones horizontales correspondientes a:
-      - Parte 1 (Estilos E): columna izquierda
-      - Parte 2 (Preferencias P): columna central
-      - Parte 3 (Habilidad H): columna derecha
-
-    Detecta los límites reales de cada tabla buscando separaciones verticales
-    (columnas de baja densidad de tinta). Si no hay separación clara, divide en tercios.
-    """
-    import cv2
-
-    h, w = imagen_binaria.shape[:2]
-    inv = cv2.bitwise_not(imagen_binaria)
-
-    # Proyección vertical: sumar píxeles blancos por columna
-    proyeccion_v = np.sum(inv, axis=0).astype(np.float32)
-
-    # Normalizar
-    if proyeccion_v.max() > 0:
-        proyeccion_v = proyeccion_v / proyeccion_v.max()
-
-    # Buscar valles (zonas de baja densidad = separadores entre tablas)
-    # Solo buscar en la zona central de la página (evitar márgenes)
-    zona_busqueda_inicio = int(w * 0.20)
-    zona_busqueda_fin = int(w * 0.80)
-
-    umbral_valle = 0.30
-    en_valle = False
-    valles = []
-    inicio_valle = 0
-
-    for x in range(zona_busqueda_inicio, zona_busqueda_fin):
-        if proyeccion_v[x] < umbral_valle and not en_valle:
-            en_valle = True
-            inicio_valle = x
-        elif proyeccion_v[x] >= umbral_valle and en_valle:
-            en_valle = False
-            centro_valle = (inicio_valle + x) // 2
-            ancho_valle = x - inicio_valle
-            if ancho_valle > int(w * 0.01):  # Valle mínimo de 1% del ancho
-                valles.append(centro_valle)
-
-    # Filtrar: necesitamos exactamente 2 valles para 3 bloques
-    # Tomar el primer y segundo valle si hay suficientes
-    if len(valles) >= 2:
-        # Asegurar que los valles estén razonablemente distribuidos
-        # (no demasiado juntos)
-        valles_validos = [valles[0]]
-        for v in valles[1:]:
-            if v - valles_validos[-1] > int(w * 0.15):
-                valles_validos.append(v)
-        valles = valles_validos[:2]
-
-    if len(valles) == 2:
-        x_div1, x_div2 = valles[0], valles[1]
-        logger.info("Divisiones detectadas en x=%d y x=%d (ancho=%d)", x_div1, x_div2, w)
-    else:
-        # Fallback: dividir en tercios
-        x_div1 = w // 3
-        x_div2 = (w * 2) // 3
-        logger.warning("No se detectaron valles claros. Dividiendo en tercios: %d, %d", x_div1, x_div2)
-
-    # Recortar con pequeño margen para excluir líneas divisorias
-    margen = max(2, int(w * 0.005))
-    col_e = imagen_binaria[:, 0: x_div1 - margen]
-    col_p = imagen_binaria[:, x_div1 + margen: x_div2 - margen]
-    col_h = imagen_binaria[:, x_div2 + margen: w]
-
-    return col_e, col_p, col_h
-
-
-# ─────────────────────────────────────────────────────────────
-# PIPELINE PRINCIPAL
-# ─────────────────────────────────────────────────────────────
-
-def procesar_formulario_pdf(pdf_source: Union[str, bytes, io.BytesIO]) -> Dict[str, Any]:
-    """
-    Pipeline OCR principal para el formulario IEPPO de una página.
-
-    Pasos:
-      1. Convertir PDF a imágenes de alta resolución (300 DPI).
-      2. Preprocesar (escala de grises, deskew, binarización Otsu).
-      3. Dividir la página en 3 columnas de tablas: E | P | H.
-      4. En cada columna, detectar filas y clasificar casillas No/Sí.
-      5. Guardar el estado detectado en el diccionario de marcas.
+    Analiza un bloque (E, P, H) y decide su tipo y umbral.
 
     Retorna dict con:
-      - "exito": bool
-      - "marcas": dict[item -> "si"|"no"|"ambos"|"vacio"]
-      - "detalles": dict[item -> {densidad_no, densidad_si, confianza}]
-      - "audit": resumen de ítems por estado
-      - "mensaje": descripción del resultado
+      - tipo: "vacio" | "marcado" | "mixto"
+      - umbral: float (0.0 si vacío)
+      - p25, p50, p75: percentiles
+    """
+    if not celdas_bloque:
+        return {"tipo": "vacio", "umbral": 0.0, "p25": 0, "p50": 0, "p75": 0}
+
+    densidades = [
+        max(c["no"]["dens_total"], c["si"]["dens_total"])
+        for c in celdas_bloque.values()
+    ]
+
+    if len(densidades) < 5:
+        return {"tipo": "vacio", "umbral": 0.0, "p25": 0, "p50": 0, "p75": 0}
+
+    p25 = float(np.percentile(densidades, 25))
+    p50 = float(np.percentile(densidades, 50))
+    p75 = float(np.percentile(densidades, 75))
+
+    logger.info(
+        "Bloque %s: p25=%.4f, p50=%.4f, p75=%.4f (n=%d)",
+        prefijo, p25, p50, p75, len(densidades)
+    )
+
+    # -------------------------------------------------------------------------
+    # Detección de BLOQUE VACÍO
+    # -------------------------------------------------------------------------
+    # Si p75 < 0.04 y p50 < 0.025 → casi todas las celdas tienen densidad baja
+    # Esto significa que el bloque NO tiene marcas reales
+    if p75 < P75_VACIO and p50 < P50_VACIO:
+        logger.info("Bloque %s: VACÍO (p75=%.4f, p50=%.4f)", prefijo, p75, p50)
+        return {"tipo": "vacio", "umbral": 0.0, "p25": p25, "p50": p50, "p75": p75}
+
+    # -------------------------------------------------------------------------
+    # Detección de BLOQUE MARCADO
+    # -------------------------------------------------------------------------
+    # Si p25 > 0.07 → al menos el 75% de las celdas tienen densidad alta
+    if p25 > P25_MARCADO:
+        umbral = max(UMBRAL_MIN, min(UMBRAL_MAX, p25 * 0.4))
+        logger.info("Bloque %s: MARCADO (umbral=%.4f)", prefijo, umbral)
+        return {"tipo": "marcado", "umbral": umbral, "p25": p25, "p50": p50, "p75": p75}
+
+    # -------------------------------------------------------------------------
+    # Bloque MIXTO
+    # -------------------------------------------------------------------------
+    # Umbral entre p25 y p75 para separar vacíos de marcados
+    umbral = (p25 + p75) / 2
+    umbral = max(UMBRAL_MIN, min(UMBRAL_MAX, umbral))
+    logger.info("Bloque %s: MIXTO (umbral=%.4f)", prefijo, umbral)
+    return {"tipo": "mixto", "umbral": umbral, "p25": p25, "p50": p50, "p75": p75}
+
+
+# =============================================================================
+# CLASIFICACIÓN MULTI-SEÑAL
+# =============================================================================
+
+def _es_marca_real(sig: Dict[str, float], umbral: float) -> bool:
+    """
+    Determina si una señal corresponde a una MARCA REAL.
+
+    Una marca real debe cumplir:
+      1. Densidad total >= umbral.
+      2. Densidad central >= umbral * 0.5 (no es solo bleed de borde).
+      3. Stroke ratio >= 0.20 (trazo concentrado, no ruido distribuido).
+    """
+    if sig["dens_total"] < umbral * MARCA_DENS_FACTOR:
+        return False
+    if sig["dens_centro"] < umbral * MARCA_CENTRO_FACTOR:
+        return False
+    if sig["stroke_ratio"] < MARCA_STROKE_MIN:
+        return False
+    return True
+
+
+def _clasificar_celda(
+    s_no: Dict[str, float],
+    s_si: Dict[str, float],
+    umbral: float
+) -> Dict[str, Any]:
+    """
+    Clasifica un ítem con 3 verificaciones independientes.
+
+    Reglas:
+      1. ¿NO tiene marca real? ¿SI tiene marca real?
+      2. Solo uno → ese.
+      3. Ambos → desambiguar por densidad y centro.
+      4. Ninguno → vacío.
+    """
+    marca_no = _es_marca_real(s_no, umbral)
+    marca_si = _es_marca_real(s_si, umbral)
+
+    # -------------------------------------------------------------------------
+    # Caso 1: solo NO tiene marca real
+    # -------------------------------------------------------------------------
+    if marca_no and not marca_si:
+        return {"opcion": "no", "puntaje": 0, "confianza": "alta"}
+
+    # -------------------------------------------------------------------------
+    # Caso 2: solo SI tiene marca real
+    # -------------------------------------------------------------------------
+    if marca_si and not marca_no:
+        return {"opcion": "si", "puntaje": 1, "confianza": "alta"}
+
+    # -------------------------------------------------------------------------
+    # Caso 3: ambas tienen marca real → desambiguar
+    # -------------------------------------------------------------------------
+    if marca_no and marca_si:
+        dens_no = s_no["dens_total"]
+        dens_si = s_si["dens_total"]
+        centro_no = s_no["dens_centro"]
+        centro_si = s_si["dens_centro"]
+
+        # Desambiguación 1: ratio de densidad total
+        if dens_si > dens_no * RATIO_DESAMBIGUACION:
+            return {"opcion": "si", "puntaje": 1, "confianza": "media"}
+        if dens_no > dens_si * RATIO_DESAMBIGUACION:
+            return {"opcion": "no", "puntaje": 0, "confianza": "media"}
+
+        # Desambiguación 2: ratio de densidad central (más robusto al bleed)
+        if centro_si > centro_no * 1.2:
+            return {"opcion": "si", "puntaje": 1, "confianza": "baja"}
+        if centro_no > centro_si * 1.2:
+            return {"opcion": "no", "puntaje": 0, "confianza": "baja"}
+
+        return {"opcion": "ambos", "puntaje": 1, "confianza": "baja"}
+
+    # -------------------------------------------------------------------------
+    # Caso 4: ninguna tiene marca real → vacío
+    # -------------------------------------------------------------------------
+    return {"opcion": "vacio", "puntaje": 0, "confianza": "alta"}
+
+
+# =============================================================================
+# PIPELINE PRINCIPAL
+# =============================================================================
+
+def procesar_formulario_pdf(
+    pdf_source: Union[str, bytes, io.BytesIO]
+) -> Dict[str, Any]:
+    """
+    Pipeline OCR con análisis POR BLOQUE independiente.
+
+    Cada bloque (E, P, H) se analiza y clasifica con su propio umbral,
+    detectando automáticamente si está vacío, marcado o mixto.
     """
     marcas = generar_items_vacios()
-    detalles = {}
-    mensajes = []
-    exito = False
+    detalles: Dict[str, Any] = {}
+    mensajes: list = []
 
     try:
-        imagenes = pdf_a_imagenes(pdf_source, dpi=300)
+        # =====================================================================
+        # 1. RENDERIZAR PDF
+        # =====================================================================
+        try:
+            imagenes = pdf_a_imagenes(pdf_source, dpi=DPI_PROCESAMIENTO)
+        except Exception as e_pdf:
+            logger.error("Error al renderizar PDF: %s", e_pdf, exc_info=True)
+            return _respuesta_error(marcas, detalles,
+                "El archivo está dañado, protegido con contraseña o no es un PDF válido.")
 
         if not imagenes:
-            return {
-                "exito": False,
-                "marcas": marcas,
-                "detalles": detalles,
-                "mensaje": "El archivo PDF no contiene páginas legibles.",
-                "audit": auditar_marcas(marcas)
-            }
+            return _respuesta_error(marcas, detalles,
+                "El archivo PDF no contiene páginas legibles.")
 
-        # Obtener el orden correcto de las 118 etiquetas
-        bloques = obtener_bloques()
-        etiquetas_e = bloques["ESTILOS PERSONALES"]       # E1–E33 (33 ítems)
-        etiquetas_p = bloques["ACTIVIDADES DE PREFERENCIA"]  # P1–P47 (47 ítems)
-        etiquetas_h = bloques["PERCEPCIÓN DE HABILIDAD"]  # H1–H38 (38 ítems)
+        if len(imagenes) > 1:
+            logger.warning("PDF con %d páginas. Procesando solo la primera.", len(imagenes))
+            mensajes.append(f"⚠️ PDF de {len(imagenes)} páginas, procesando primera.")
 
+        img_np = imagenes[0]
+
+        # =====================================================================
+        # 2. ORIENTACIÓN
+        # =====================================================================
+        img_np = _verificar_orientacion_pdf(img_np)
+
+        # =====================================================================
+        # 3. PREPROCESAMIENTO
+        # =====================================================================
+        prep = preprocesar_imagen(img_np, metodo_binarizacion="otsu")
+        binaria = prep["binaria"]
+        gris = prep["gris"]
+        logger.info("Deskew aplicado: %.2f°", prep.get("angulo_correccion", 0.0))
+
+        es_valida, motivo = _validar_binarizacion(binaria, gris)
+        if not es_valida:
+            logger.info("Otsu no óptima (%s). Reintentando adaptativo...", motivo)
+            binaria = binarizar(gris, metodo="adaptativo")
+            es_valida_2, motivo_2 = _validar_binarizacion(binaria, gris)
+            if not es_valida_2:
+                return _respuesta_error(marcas, detalles,
+                    "El escaneo tiene muy baja calidad o está demasiado borroso.",
+                    paginas=1)
+
+        # =====================================================================
+        # 4. DETECCIÓN DE TABLAS
+        # =====================================================================
+        tablas = detectar_3_tablas_geometria(binaria)
+        es_valida_tablas, motivo_tablas = _validar_estructura_tablas(tablas)
+        if not es_valida_tablas:
+            return _respuesta_error(marcas, detalles,
+                f"No se pudo identificar la estructura del formulario ({motivo_tablas}).",
+                paginas=1)
+
+        tablas = sorted(tablas, key=lambda t: t["x"])
+
+        bloques_info = [
+            ("ESTILOS PERSONALES",         "E", 33, tablas[0]),
+            ("ACTIVIDADES DE PREFERENCIA", "P", 47, tablas[1]),
+            ("PERCEPCIÓN DE HABILIDAD",    "H", 38, tablas[2]),
+        ]
+
+        # =====================================================================
+        # PASE 1: EXTRAER SEÑALES POR BLOQUE
+        # =====================================================================
+        logger.info("PASE 1: Extrayendo señales multi-celda por bloque...")
+
+        celdas_por_bloque: Dict[str, Dict[str, Dict[str, Dict[str, float]]]] = {
+            "E": {}, "P": {}, "H": {}
+        }
         total_procesados = 0
+        bloques_con_problemas: list = []
 
-        for idx_pag, img in enumerate(imagenes):
-            prep = preprocesar_imagen(img)
-            binaria = prep["binaria"]
+        for nombre_bloque, prefijo, n_esperados, info_tabla in bloques_info:
+            roi_tabla = info_tabla["roi_binaria"]
 
-            logger.info("Página %d: %.1f° de corrección aplicada", idx_pag + 1, prep["angulo_correccion"])
+            try:
+                filas, x_cortes = obtener_filas_y_columnas_tabla(roi_tabla, n_esperados)
+            except Exception as e_rows:
+                logger.error("Error al extraer cuadrícula de %s: %s", nombre_bloque, e_rows)
+                bloques_con_problemas.append(f"{nombre_bloque}: cuadrícula")
+                continue
 
-            # Dividir en 3 columnas de tablas
-            col_e, col_p, col_h = _dividir_en_3_columnas(binaria)
+            if len(x_cortes) < 4:
+                logger.error("Bloque %s: cortes X insuficientes.", nombre_bloque)
+                bloques_con_problemas.append(f"{nombre_bloque}: cortes X")
+                continue
 
-            # Procesar cada bloque — ✅ aquí se guardan los resultados en marcas
-            n_e = _procesar_bloque_tabla(col_e, etiquetas_e, marcas, detalles)
-            n_p = _procesar_bloque_tabla(col_p, etiquetas_p, marcas, detalles)
-            n_h = _procesar_bloque_tabla(col_h, etiquetas_h, marcas, detalles)
+            if len(filas) != n_esperados:
+                logger.warning("Bloque %s: %d/%d filas.", nombre_bloque, len(filas), n_esperados)
+                bloques_con_problemas.append(f"{nombre_bloque}: {len(filas)}/{n_esperados}")
 
-            total_procesados += n_e + n_p + n_h
-            logger.info(
-                "Página %d: E=%d/%d  P=%d/%d  H=%d/%d  (total=%d/118)",
-                idx_pag + 1,
-                n_e, len(etiquetas_e),
-                n_p, len(etiquetas_p),
-                n_h, len(etiquetas_h),
-                n_e + n_p + n_h
-            )
+            x_no_a, x_no_b = x_cortes[1], x_cortes[2]
+            x_si_a, x_si_b = x_cortes[2], x_cortes[3]
 
-        # Evaluación de calidad del resultado
+            items_bloque = 0
+            for idx, fila in enumerate(filas):
+                if idx >= n_esperados:
+                    break
+
+                item_key = f"{prefijo}{idx + 1}"
+                y1, y2 = fila["y1"], fila["y2"]
+
+                if y2 <= y1 or (y2 - y1) < 3:
+                    continue
+
+                celda_no = roi_tabla[y1:y2, x_no_a:x_no_b]
+                celda_si = roi_tabla[y1:y2, x_si_a:x_si_b]
+
+                if celda_no.size == 0 or celda_si.size == 0:
+                    continue
+
+                s_no = analizar_trazo_celda_multisenal(celda_no)
+                s_si = analizar_trazo_celda_multisenal(celda_si)
+
+                celdas_por_bloque[prefijo][item_key] = {"no": s_no, "si": s_si}
+                items_bloque += 1
+
+            total_procesados += items_bloque
+            logger.info("Bloque %s (%s): %d/%d celdas extraídas.",
+                        nombre_bloque, prefijo, items_bloque, n_esperados)
+
+        # =====================================================================
+        # PASE 2: ANÁLISIS Y CLASIFICACIÓN POR BLOQUE INDEPENDIENTE
+        # =====================================================================
+        logger.info("PASE 2: Análisis y clasificación por bloque...")
+
+        for prefijo in ["E", "P", "H"]:
+            celdas_bloque = celdas_por_bloque[prefijo]
+
+            # Analizar el bloque
+            analisis = _analizar_bloque(celdas_bloque, prefijo)
+            tipo_bloque = analisis["tipo"]
+            umbral_bloque = analisis["umbral"]
+
+            logger.info("Bloque %s: tipo=%s, umbral=%.4f",
+                        prefijo, tipo_bloque, umbral_bloque)
+
+            # Si el bloque está vacío → todas las celdas son VACIO
+            if tipo_bloque == "vacio":
+                for item_key in celdas_bloque.keys():
+                    marcas[item_key] = "vacio"
+                    detalles[item_key] = {
+                        "opcion": "vacio",
+                        "puntaje": 0,
+                        "confianza": "alta",
+                        "dens_total_no": round(celdas_bloque[item_key]["no"]["dens_total"], 4),
+                        "dens_total_si": round(celdas_bloque[item_key]["si"]["dens_total"], 4),
+                    }
+                continue
+
+            # Clasificar cada celda con el umbral del bloque
+            for item_key, d in celdas_bloque.items():
+                clasif = _clasificar_celda(d["no"], d["si"], umbral_bloque)
+
+                marcas[item_key] = clasif["opcion"]
+                detalles[item_key] = {
+                    "opcion": clasif["opcion"],
+                    "puntaje": clasif["puntaje"],
+                    "dens_total_no": round(d["no"]["dens_total"], 4),
+                    "dens_total_si": round(d["si"]["dens_total"], 4),
+                    "dens_centro_no": round(d["no"]["dens_centro"], 4),
+                    "dens_centro_si": round(d["si"]["dens_centro"], 4),
+                    "stroke_ratio_no": round(d["no"]["stroke_ratio"], 3),
+                    "stroke_ratio_si": round(d["si"]["stroke_ratio"], 3),
+                    "confianza": clasif["confianza"],
+                }
+
+        # =====================================================================
+        # RESULTADO FINAL
+        # =====================================================================
         audit = auditar_marcas(marcas)
+        n_vacios = len(audit.get("vacios", []))
+        n_ambos = len(audit.get("ambos", []))
 
-        if total_procesados == 0:
-            mensajes.append(
-                "⚠️ No se detectaron filas en el formulario. "
-                "Por favor verifica que el PDF sea un escaneo válido del formulario IEPPO."
-            )
-            exito = False
-        else:
-            tasa = total_procesados / 118
-            if tasa < 0.5:
-                mensajes.append(
-                    f"⚠️ Solo se procesaron {total_procesados}/118 ítems ({tasa*100:.0f}%). "
-                    "El escaneo puede estar incompleto o muy inclinado. Revisa manualmente."
-                )
-            else:
-                mensajes.append(
-                    f"✅ OCR completado: {total_procesados}/118 ítems procesados. "
-                    f"{len(audit['vacios'])} sin marca, {len(audit['ambos'])} con doble marca."
-                )
+        umbral_total = int(TOTAL_ITEMS_ESPERADOS * PORCENTAJE_EXITO_TOTAL)
+        umbral_parcial = int(TOTAL_ITEMS_ESPERADOS * PORCENTAJE_EXITO_PARCIAL)
+
+        if total_procesados >= umbral_total and not bloques_con_problemas:
             exito = True
+            mensajes.append(
+                f"✅ OCR completado: {total_procesados}/{TOTAL_ITEMS_ESPERADOS}. "
+                f"({n_vacios} vacíos, {n_ambos} dobles)."
+            )
+        elif total_procesados >= umbral_parcial:
+            exito = True
+            mensajes.append(
+                f"⚠️ Procesamiento con advertencias: {total_procesados}/"
+                f"{TOTAL_ITEMS_ESPERADOS}."
+            )
+            if bloques_con_problemas:
+                mensajes.append("Bloques: " + ", ".join(bloques_con_problemas) + ".")
+        else:
+            exito = False
+            mensajes.append(
+                f"❌ Procesamiento insuficiente: {total_procesados}/{TOTAL_ITEMS_ESPERADOS}."
+            )
 
         return {
             "exito": exito,
@@ -403,19 +519,41 @@ def procesar_formulario_pdf(pdf_source: Union[str, bytes, io.BytesIO]) -> Dict[s
             "detalles": detalles,
             "audit": audit,
             "mensaje": " ".join(mensajes),
-            "paginas": len(imagenes),
-            "total_procesados": total_procesados
+            "paginas": 1,
+            "total_procesados": total_procesados,
         }
 
+    except FileNotFoundError:
+        return _respuesta_error(marcas, detalles,
+            "No se pudo acceder al archivo PDF proporcionado.")
+    except MemoryError:
+        return _respuesta_error(marcas, detalles,
+            "La imagen del PDF es demasiado grande.")
     except Exception as e:
-        logger.error("Error en el pipeline OCR: %s", e, exc_info=True)
-        return {
-            "exito": False,
-            "marcas": marcas,
-            "detalles": detalles,
-            "mensaje": (
-                f"El OCR automático no pudo procesar el PDF ({str(e)}). "
-                "Se habilitó la plantilla para verificación manual."
-            ),
-            "audit": auditar_marcas(marcas)
-        }
+        logger.error("Excepción no controlada: %s", e, exc_info=True)
+        return _respuesta_error(marcas, detalles,
+            f"Error inesperado ({type(e).__name__}).")
+
+
+# =============================================================================
+# WRAPPER CON TIMEOUT
+# =============================================================================
+
+def procesar_formulario_pdf_con_timeout(
+    pdf_source: Union[str, bytes, io.BytesIO],
+    timeout_seg: int = TIMEOUT_SEGUNDOS
+) -> Dict[str, Any]:
+    """Wrapper con timeout para Streamlit."""
+    marcas = generar_items_vacios()
+    detalles: Dict[str, Any] = {}
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        futuro = executor.submit(procesar_formulario_pdf, pdf_source)
+        try:
+            return futuro.result(timeout=timeout_seg)
+        except FuturesTimeout:
+            return _respuesta_error(marcas, detalles,
+                f"El procesamiento excedió {timeout_seg} segundos.")
+        except Exception as e:
+            return _respuesta_error(marcas, detalles,
+                f"Error inesperado: {type(e).__name__}.")
