@@ -608,3 +608,4 @@ def _filas_uniformes(h: int, n_filas_esperadas: int) -> List[Dict[str, int]]:
         filas.append({"y1": y1, "y2": min(h, y2)})
 
     return filas
+

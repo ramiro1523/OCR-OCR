@@ -4,6 +4,16 @@ Clasificación de marcas en celdas IEPPO.
 Determina si una celda "No" y una celda "Sí" están marcadas con X,
 aplicando umbrales robustos y limpieza morfológica para evitar
 falsos positivos por líneas impresas o ruido.
+
+CAMBIOS respecto a la versión anterior:
+  - stroke_ratio ahora se calcula contando PÍXELES del componente
+    conexo más grande (cv2.connectedComponentsWithStats), no área
+    geométrica de contorno (cv2.contourArea). El cálculo anterior
+    penalizaba trazos delgados (X hechas con lapicero fino o marcas
+    débiles), haciendo que stroke_ratio saliera bajo aunque la marca
+    fuera real — esto causaba que celdas con marca chica pero clara
+    asimetría no/sí terminaran clasificadas como "vacío".
+  - Eliminada la definición duplicada de calcular_distance_transform_score.
 """
 
 import logging
@@ -22,7 +32,7 @@ logger = logging.getLogger(__name__)
 # Padding interno para excluir bordes impresos
 PADDING_PROPORCION = 0.10
 
-# Umbral de densidad principal (bajado de 0.022 a 0.020)
+# Umbral de densidad principal
 UMBRAL_DENSIDAD_MARCA = 0.020
 
 # Umbral de área del contorno más grande (relativo al área interior)
@@ -36,6 +46,47 @@ FACTOR_DESAMBIGUACION = 1.5
 
 # Diferencia absoluta mínima para desambiguar cuando el ratio no es claro
 DIFERENCIA_ABSOLUTA_AMBOS = 0.005
+
+
+# =============================================================================
+# UTILIDAD COMPARTIDA: stroke_ratio robusto
+# =============================================================================
+
+def _stroke_ratio_por_pixeles(limpio: np.ndarray) -> float:
+    """
+    Fracción de tinta que pertenece al componente conexo más grande,
+    contando PÍXELES (no área geométrica de contorno).
+
+    A diferencia de cv2.contourArea (que mide el área del polígono
+    envolvente y penaliza trazos delgados de 1-2 px de ancho), esto
+    cuenta directamente cuántos píxeles de tinta forman parte del
+    trazo principal. Una X real, gruesa o delgada, tendrá casi toda
+    su tinta en un solo componente conexo → ratio cercano a 1.
+    Ruido disperso o bleed de borde queda repartido en varios
+    componentes pequeños → ratio bajo.
+
+    Args:
+        limpio: imagen binaria ya con padding recortado y apertura
+                morfológica aplicada, tinta = píxeles > 0.
+
+    Returns:
+        float 0-1.
+    """
+    tinta_total = int(np.sum(limpio > 0))
+    if tinta_total == 0:
+        return 0.0
+
+    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        limpio, connectivity=8
+    )
+    if n_labels <= 1:
+        return 0.0
+
+    # stats incluye el fondo en el índice 0 → excluirlo
+    areas = stats[1:, cv2.CC_STAT_AREA]
+    max_componente = int(areas.max())
+
+    return max_componente / tinta_total
 
 
 # =============================================================================
@@ -245,6 +296,8 @@ def clasificar_item(
         "densidad_si": round(dens_si, 4),
         "confianza": "alta"
     }
+
+
 def analizar_trazo_celda_extendido(
     celda_binaria: np.ndarray
 ) -> Tuple[bool, float, float, float, float]:
@@ -334,29 +387,30 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
     Retorna un dict con:
       - marcada: bool (por densidad total)
       - dens_total: densidad global
-      - area_max: área del contorno más grande
+      - area_max: área del contorno más grande (geométrica, cv2.contourArea)
       - dens_centro: densidad en el 60% central
       - dens_izq: densidad en el 20% izquierdo
       - dens_der: densidad en el 20% derecho
-      - stroke_ratio: max_area / (dens_total * total_area) — real X ≈ 1, bleed < 0.5
+      - stroke_ratio: fracción de tinta en el componente conexo más
+        grande, contado por PÍXELES (no por área geométrica de
+        contorno). Real X ≈ cercano a 1 sin importar el grosor del
+        trazo; bleed/ruido disperso < 0.5.
     """
+    vacio = {
+        "marcada": False, "dens_total": 0.0, "area_max": 0.0,
+        "dens_centro": 0.0, "dens_izq": 0.0, "dens_der": 0.0,
+        "stroke_ratio": 0.0,
+    }
+
     if celda_binaria is None or celda_binaria.size == 0:
-        return {
-            "marcada": False, "dens_total": 0.0, "area_max": 0.0,
-            "dens_centro": 0.0, "dens_izq": 0.0, "dens_der": 0.0,
-            "stroke_ratio": 0.0,
-        }
+        return dict(vacio)
 
     if celda_binaria.dtype != np.uint8:
         celda_binaria = celda_binaria.astype(np.uint8)
 
     h, w = celda_binaria.shape[:2]
     if h < 8 or w < 12:
-        return {
-            "marcada": False, "dens_total": 0.0, "area_max": 0.0,
-            "dens_centro": 0.0, "dens_izq": 0.0, "dens_der": 0.0,
-            "stroke_ratio": 0.0,
-        }
+        return dict(vacio)
 
     # Padding
     pad_y = max(1, int(h * PADDING_PROPORCION))
@@ -365,19 +419,11 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
     x1, x2 = pad_x, w - pad_x
 
     if y2 <= y1 or x2 <= x1:
-        return {
-            "marcada": False, "dens_total": 0.0, "area_max": 0.0,
-            "dens_centro": 0.0, "dens_izq": 0.0, "dens_der": 0.0,
-            "stroke_ratio": 0.0,
-        }
+        return dict(vacio)
 
     interior = celda_binaria[y1:y2, x1:x2]
     if interior.size == 0:
-        return {
-            "marcada": False, "dens_total": 0.0, "area_max": 0.0,
-            "dens_centro": 0.0, "dens_izq": 0.0, "dens_der": 0.0,
-            "stroke_ratio": 0.0,
-        }
+        return dict(vacio)
 
     # Limpieza morfológica
     inv = cv2.bitwise_not(interior)
@@ -389,7 +435,8 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
     tinta_total = int(np.sum(limpio > 0))
     dens_total = tinta_total / total_size if total_size > 0 else 0.0
 
-    # Contorno máximo
+    # Contorno máximo (se mantiene para compatibilidad / debug,
+    # ya NO se usa para calcular stroke_ratio)
     contornos, _ = cv2.findContours(
         limpio, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
@@ -412,8 +459,8 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
     dens_izq = (np.sum(borde_izq > 0) / borde_izq.size) if borde_izq.size > 0 else 0.0
     dens_der = (np.sum(borde_der > 0) / borde_der.size) if borde_der.size > 0 else 0.0
 
-    # Stroke ratio: qué fracción de la tinta está en un solo trazo conectado
-    stroke_ratio = max_area / tinta_total if tinta_total > 0 else 0.0
+    # Stroke ratio robusto (por píxeles, no penaliza trazos delgados)
+    stroke_ratio = _stroke_ratio_por_pixeles(limpio)
 
     # Decisión de marcada (por densidad total)
     marcada = dens_total >= UMBRAL_DENSIDAD_MARCA
@@ -427,3 +474,118 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
         "dens_der": dens_der,
         "stroke_ratio": stroke_ratio,
     }
+
+
+def calcular_varianza_gris(celda_gris: np.ndarray) -> float:
+    """
+    Calcula la varianza de los tonos de gris dentro de la celda.
+
+    Una celda vacía tiene varianza baja (papel uniforme).
+    Una celda con marca tiene varianza alta (tinta sobre papel).
+
+    Esta señal es robusta ante el grosor del lapicero y el contraste.
+
+    Args:
+        celda_gris: Imagen en escala de grises (uint8, 0-255).
+
+    Returns:
+        float: varianza normalizada entre 0 y 1 (más alto = más probable marca).
+    """
+    if celda_gris is None or celda_gris.size == 0:
+        return 0.0
+
+    h, w = celda_gris.shape[:2]
+    if h < 5 or w < 5:
+        return 0.0
+
+    # Padding interno para excluir bordes impresos
+    pad_y = max(1, int(h * 0.15))
+    pad_x = max(1, int(w * 0.15))
+
+    y1, y2 = pad_y, h - pad_y
+    x1, x2 = pad_x, w - pad_x
+
+    if y2 <= y1 or x2 <= x1:
+        return 0.0
+
+    interior = celda_gris[y1:y2, x1:x2]
+    if interior.size == 0:
+        return 0.0
+
+    # Varianza de los tonos (float para evitar overflow)
+    varianza = float(np.var(interior.astype(np.float32)))
+
+    # Normalizar: varianza > 2000 = marca clara, < 200 = vacío
+    var_norm = min(1.0, varianza / 2000.0)
+
+    return var_norm
+
+
+def calcular_distance_transform_score(celda_binaria: np.ndarray) -> float:
+    """
+    Calcula el distance transform score de la celda.
+
+    Mide cuánto penetra la tinta hacia el CENTRO de la celda.
+    Un bleed de borde tiene distancia baja en el centro.
+    Una marca real (X, ✓) tiene distancia alta en el centro.
+
+    Args:
+        celda_binaria: Imagen binaria (fondo blanco 255, tinta negra 0).
+
+    Returns:
+        float: score normalizado 0-1.
+              0 = sin tinta central (vacío o solo bleed)
+              >0.3 = marca que cruza el centro
+    """
+    if celda_binaria is None or celda_binaria.size == 0:
+        return 0.0
+
+    if celda_binaria.dtype != np.uint8:
+        celda_binaria = celda_binaria.astype(np.uint8)
+
+    h, w = celda_binaria.shape[:2]
+    if h < 8 or w < 8:
+        return 0.0
+
+    # 1. Padding interno (25% para evitar bordes impresos)
+    pad_y = max(2, int(h * 0.25))
+    pad_x = max(2, int(w * 0.25))
+    y1, y2 = pad_y, h - pad_y
+    x1, x2 = pad_x, w - pad_x
+
+    if y2 <= y1 or x2 <= x1:
+        return 0.0
+
+    interior = celda_binaria[y1:y2, x1:x2]
+    if interior.size == 0:
+        return 0.0
+
+    # 2. Invertir: tinta debe ser blanca para distanceTransform
+    tinta = cv2.bitwise_not(interior)
+
+    # 3. Limpieza morfológica
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+    tinta = cv2.morphologyEx(tinta, cv2.MORPH_OPEN, kernel)
+
+    # 4. Distance Transform
+    dist = cv2.distanceTransform(tinta, cv2.DIST_L2, 5)
+
+    if dist.max() == 0:
+        return 0.0
+
+    # 5. Medir tinta en el centro (zona central 40%)
+    h_int, w_int = dist.shape
+    cy1 = int(h_int * 0.30)
+    cy2 = int(h_int * 0.70)
+    cx1 = int(w_int * 0.30)
+    cx2 = int(w_int * 0.70)
+
+    zona_central = dist[cy1:cy2, cx1:cx2]
+    if zona_central.size == 0:
+        return 0.0
+
+    # 6. Score: máximo de distancia en el centro normalizado
+    dist_max_centro = float(np.max(zona_central))
+    score = min(1.0, dist_max_centro / 5.0)
+
+    return score
