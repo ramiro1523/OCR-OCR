@@ -6,7 +6,9 @@ Proceso:
   2. Orientar plantilla al scan (rota 90° si están en orientaciones opuestas).
   3. Redimensionar scan al tamaño de la plantilla (solo por escala).
   4. Alinear con ECC subpixel; fallback a ORB + homografía.
-  5. Diff = |scan_alineado - plantilla|.
+  5. Diff robusto con BLACKHAT: extrae features oscuros locales de
+     scan y plantilla, luego los compara. Ignora variaciones globales
+     de brillo/contraste entre plantilla y scan.
   6. Umbralizar y limpiar.
   7. ELIMINAR líneas horizontales y verticales residuales (cuadrícula).
   8. Solo quedan marcas reales (X, ✓, ○) que son diagonales/curvas.
@@ -16,15 +18,17 @@ FIXES aplicados:
     lo que hacía que ECC SIEMPRE fallara y el diff se calculara sobre un
     scan desalineado).
   - Rotación automática de la plantilla si scan y plantilla tienen
-    orientaciones opuestas (portrait vs landscape). Antes se hacía un
-    resize que estiraba la imagen y corrompía el diff.
+    orientaciones opuestas (portrait vs landscape).
   - Fallback ORB cuando ECC no converge.
   - Si ECC y ORB fallan → devolver None (NO "sin alinear"). El pipeline
     caerá a modo clásico, que es mejor que un diff basura.
   - Garantía estricta: el diff devuelto SIEMPRE tiene la misma shape
     que el scan de entrada. Si no, se descarta.
-  - DIFF_UMBRAL bajado de 80 a 50 (con alineación real ya no hace falta
-    ser tan agresivo).
+  - DIFF con BLACKHAT en vez de absdiff directo. absdiff se ensuciaba
+    con cualquier diferencia de nivel de fondo entre plantilla y scan,
+    produciendo densidades de 0.03+ que forzaban el modo clásico.
+    BLACKHAT extrae solo features oscuros locales (tinta real) e ignora
+    el nivel de fondo.
 """
 
 import logging
@@ -72,7 +76,14 @@ ORB_MIN_MATCHES = 20       # mínimo de matches buenos para aceptar homografía
 ORB_MIN_INLIERS = 15       # mínimo de inliers para aceptar la homografía
 
 # --- Diff ---
+# Umbral sobre la señal BLACKHAT. Con blackhat el rango útil es más
+# estrecho que con absdiff directo, así que 50 funciona bien.
 DIFF_UMBRAL = 50
+
+# Tamaño del kernel para estimar el fondo local en BLACKHAT.
+# Debe ser mayor que el grosor de los trazos pero menor que las celdas.
+# 31 px funciona bien para celdas de ~40-60 px en 300 DPI.
+KERNEL_BLACKHAT = (31, 31)
 
 # Kernels para eliminar líneas residuales
 KERNEL_LINEA_H = (30, 1)
@@ -328,7 +339,7 @@ def _alinear_orb(
 
 
 # =============================================================================
-# DIFF CON ELIMINACIÓN DE LÍNEAS RESIDUALES
+# DIFF CON BLACKHAT + ELIMINACIÓN DE LÍNEAS RESIDUALES
 # =============================================================================
 
 def _calcular_diff(
@@ -337,57 +348,72 @@ def _calcular_diff(
     umbral: int = DIFF_UMBRAL
 ) -> np.ndarray:
     """
-    Diff con eliminación de líneas residuales.
+    Diff robusto contra variaciones globales de brillo/contraste.
+
+    En vez de absdiff(scan, plantilla) directo (que se ensucia con
+    cualquier diferencia de nivel de fondo entre plantilla y scan),
+    se aplica BLACKHAT a ambas imágenes: BLACKHAT = cierre(img) - img,
+    que extrae solo features oscuros locales (tinta, texto, marcas)
+    ignorando el nivel de fondo.
+
+    Luego se compara blackhat(scan) vs blackhat(plantilla).
 
     Args:
         scan_alineado: scan alineado a la plantilla.
         plantilla_gris: plantilla en escala de grises.
-        umbral: umbral de binarización del absdiff (0-255).
+        umbral: umbral de binarización del diff de blackhats (0-255).
 
     Returns:
         Imagen binaria (uint8) con 255 en píxeles de tinta nueva.
     """
-    # 0. Suavizado ligero para reducir ruido de sensor/JPEG
+    # 1. Suavizado ligero para reducir ruido de sensor/JPEG
     scan_blur = cv2.GaussianBlur(scan_alineado, (3, 3), 0)
     plant_blur = cv2.GaussianBlur(plantilla_gris, (3, 3), 0)
 
-    # 1. Diff absoluto
-    diff = cv2.absdiff(scan_blur, plant_blur)
+    # 2. Kernel para estimar el fondo local
+    kernel_bg = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_BLACKHAT)
 
-    # 2. Umbralizar
+    # 3. BLACKHAT: extrae features oscuros locales, ignora nivel de fondo
+    scan_bh = cv2.morphologyEx(scan_blur, cv2.MORPH_BLACKHAT, kernel_bg)
+    plant_bh = cv2.morphologyEx(plant_blur, cv2.MORPH_BLACKHAT, kernel_bg)
+
+    # 4. Diff de los blackhats
+    diff = cv2.absdiff(scan_bh, plant_bh)
+
+    # 5. Umbralizar
     _, diff_bin = cv2.threshold(diff, umbral, 255, cv2.THRESH_BINARY)
 
-    # 3. Limpieza básica
+    # 6. Limpieza básica
     kernel_peq = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_LIMPIEZA)
     diff_limpio = cv2.morphologyEx(diff_bin, cv2.MORPH_OPEN, kernel_peq)
 
-    # 4. Detectar líneas horizontales residuales
+    # 7. Detectar líneas horizontales residuales
     kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, KERNEL_LINEA_H)
     lineas_h = cv2.morphologyEx(diff_limpio, cv2.MORPH_OPEN, kernel_h)
 
-    # 5. Detectar líneas verticales residuales
+    # 8. Detectar líneas verticales residuales
     kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, KERNEL_LINEA_V)
     lineas_v = cv2.morphologyEx(diff_limpio, cv2.MORPH_OPEN, kernel_v)
 
-    # 6. Dilatar líneas para cubrir sus bordes
+    # 9. Dilatar líneas para cubrir sus bordes
     kernel_dil = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_DILATAR_LINEAS)
     lineas_h_dil = cv2.dilate(lineas_h, kernel_dil, iterations=2)
     lineas_v_dil = cv2.dilate(lineas_v, kernel_dil, iterations=2)
 
-    # 7. Restar líneas
+    # 10. Restar líneas
     solo_marcas = cv2.subtract(diff_limpio, lineas_h_dil)
     solo_marcas = cv2.subtract(solo_marcas, lineas_v_dil)
 
-    # 8. Limpieza final
+    # 11. Limpieza final
     solo_marcas = cv2.morphologyEx(solo_marcas, cv2.MORPH_OPEN, kernel_peq)
 
-    # 9. Estadística
+    # 12. Estadística
     total = solo_marcas.size
     pixeles = int(np.sum(solo_marcas > 0))
     densidad = pixeles / total if total > 0 else 0.0
 
     logger.info(
-        "Diff final: densidad=%.5f (líneas H=%d px, V=%d px)",
+        "Diff (blackhat): densidad=%.5f (líneas H=%d px, V=%d px)",
         densidad,
         int(np.sum(lineas_h_dil > 0)),
         int(np.sum(lineas_v_dil > 0)),
