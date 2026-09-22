@@ -5,14 +5,19 @@ Determina si una celda "No" y una celda "Sí" están marcadas con X,
 aplicando umbrales robustos y limpieza morfológica para evitar
 falsos positivos por líneas impresas o ruido.
 
-CAMBIOS respecto a la versión anterior:
-  - stroke_ratio ahora se calcula contando PÍXELES del componente
-    conexo más grande (cv2.connectedComponentsWithStats), no área
-    geométrica de contorno (cv2.contourArea). El cálculo anterior
-    penalizaba trazos delgados (X hechas con lapicero fino o marcas
-    débiles), haciendo que stroke_ratio saliera bajo aunque la marca
-    fuera real — esto causaba que celdas con marca chica pero clara
-    asimetría no/sí terminaran clasificadas como "vacío".
+CAMBIOS respecto a versiones anteriores:
+  - stroke_ratio se calcula contando PÍXELES del componente conexo
+    más grande (cv2.connectedComponentsWithStats), no área geométrica
+    de contorno (cv2.contourArea).
+  - FASE 3.2: antes de connectedComponents, se aplica una dilatación
+    3x3 para fusionar las dos diagonales de una X cuando no se tocan
+    exactamente en el centro (típico de lapiceros finos). Sin esta
+    fusión, OpenCV detectaba 2 componentes separados y el ratio caía
+    a ~0.5 aunque la marca fuera real.
+  - NUEVA señal: simetría diagonal (calcular_simetria_diagonal). Se
+    usa en pipeline.py SOLO como desempate cuando no y sí tienen el
+    mismo score. Distingue X (4 cuadrantes activos) de línea o mancha
+    (1-2 cuadrantes). No afecta decisiones ya tomadas.
   - Eliminada la definición duplicada de calcular_distance_transform_score.
 """
 
@@ -47,6 +52,16 @@ FACTOR_DESAMBIGUACION = 1.5
 # Diferencia absoluta mínima para desambiguar cuando el ratio no es claro
 DIFERENCIA_ABSOLUTA_AMBOS = 0.005
 
+# FASE 3.2: kernel de fusión para unir diagonales de una X que no se
+# tocan exactamente. 3x3 elíptico es suficiente para cerrar huecos de
+# 1-2 px sin deformar la marca.
+KERNEL_FUSION_TRAZOS = (3, 3)
+
+# Simetría diagonal: umbral mínimo de densidad en un cuadrante para
+# considerarlo "activo". 0.01 = 1% de píxeles. Detecta X tenues sin
+# contar ruido.
+UMBRAL_CUADRANTE_SIMETRIA = 0.01
+
 
 # =============================================================================
 # UTILIDAD COMPARTIDA: stroke_ratio robusto
@@ -57,13 +72,14 @@ def _stroke_ratio_por_pixeles(limpio: np.ndarray) -> float:
     Fracción de tinta que pertenece al componente conexo más grande,
     contando PÍXELES (no área geométrica de contorno).
 
-    A diferencia de cv2.contourArea (que mide el área del polígono
-    envolvente y penaliza trazos delgados de 1-2 px de ancho), esto
-    cuenta directamente cuántos píxeles de tinta forman parte del
-    trazo principal. Una X real, gruesa o delgada, tendrá casi toda
-    su tinta en un solo componente conexo → ratio cercano a 1.
-    Ruido disperso o bleed de borde queda repartido en varios
-    componentes pequeños → ratio bajo.
+    FASE 3.2: se aplica una dilatación 3x3 antes de connectedComponents
+    para fusionar los dos trazos de una X que no se tocan exactamente en
+    el centro (típico en lapiceros finos). Sin esta fusión, OpenCV
+    detecta 2 componentes y el ratio cae a ~0.5 aunque la marca sea real.
+
+    El denominador sigue siendo la tinta total ORIGINAL (antes de
+    dilatar) para mantener la precisión, y el resultado se limita a 1.0
+    porque tras dilatar el componente principal puede superar el total.
 
     Args:
         limpio: imagen binaria ya con padding recortado y apertura
@@ -76,8 +92,14 @@ def _stroke_ratio_por_pixeles(limpio: np.ndarray) -> float:
     if tinta_total == 0:
         return 0.0
 
+    # FASE 3.2: dilatación de fusión
+    kernel_fusion = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, KERNEL_FUSION_TRAZOS
+    )
+    limpio_fusionado = cv2.dilate(limpio, kernel_fusion, iterations=1)
+
     n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
-        limpio, connectivity=8
+        limpio_fusionado, connectivity=8
     )
     if n_labels <= 1:
         return 0.0
@@ -86,7 +108,63 @@ def _stroke_ratio_por_pixeles(limpio: np.ndarray) -> float:
     areas = stats[1:, cv2.CC_STAT_AREA]
     max_componente = int(areas.max())
 
-    return max_componente / tinta_total
+    # Clamp a 1.0: la dilatación puede hacer que max_componente > tinta_total
+    return min(1.0, max_componente / float(tinta_total))
+
+
+# =============================================================================
+# UTILIDAD COMPARTIDA: simetría diagonal
+# =============================================================================
+
+def calcular_simetria_diagonal(limpio: np.ndarray) -> float:
+    """
+    Score 0-1 de qué tan "simétrica en diagonal" es la tinta.
+
+    Idea: una X real dibujada en una celda toca las 4 esquinas del
+    interior (arriba-izq, arriba-der, abajo-izq, abajo-der). Una
+    línea diagonal toca 2. Una mancha o un bleed toca 1.
+
+    Se divide el interior en 4 cuadrantes (2x2) y se cuenta cuántos
+    tienen tinta significativa.
+
+    Args:
+        limpio: imagen binaria (tinta > 0) del interior de la celda,
+                ya con padding y apertura morfológica.
+
+    Returns:
+        float 0-1:
+          - 1.00 → 4 cuadrantes con tinta (X clara)
+          - 0.75 → 3 cuadrantes (X ligeramente descentrada)
+          - 0.50 → 2 cuadrantes (línea o V)
+          - 0.25 → 1 cuadrante (mancha, punto)
+          - 0.00 → sin tinta
+    """
+    if limpio is None or limpio.size == 0:
+        return 0.0
+
+    h, w = limpio.shape[:2]
+    if h < 4 or w < 4:
+        return 0.0
+
+    cy = h // 2
+    cx = w // 2
+
+    cuadrantes = (
+        limpio[:cy, :cx],   # arriba-izquierda
+        limpio[:cy, cx:],   # arriba-derecha
+        limpio[cy:, :cx],   # abajo-izquierda
+        limpio[cy:, cx:],   # abajo-derecha
+    )
+
+    activos = 0
+    for q in cuadrantes:
+        if q.size == 0:
+            continue
+        dens = float(np.sum(q > 0)) / q.size
+        if dens >= UMBRAL_CUADRANTE_SIMETRIA:
+            activos += 1
+
+    return activos / 4.0
 
 
 # =============================================================================
@@ -392,14 +470,20 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
       - dens_izq: densidad en el 20% izquierdo
       - dens_der: densidad en el 20% derecho
       - stroke_ratio: fracción de tinta en el componente conexo más
-        grande, contado por PÍXELES (no por área geométrica de
-        contorno). Real X ≈ cercano a 1 sin importar el grosor del
-        trazo; bleed/ruido disperso < 0.5.
+        grande, contado por PÍXELES. FASE 3.2: se dilata 3x3 antes de
+        connectedComponents para fusionar diagonales de X que no se
+        tocan exactamente. Real X ≈ 1 sin importar el grosor;
+        bleed/ruido disperso < 0.5.
+      - simetria_diagonal: fracción de cuadrantes con tinta.
+        X real ≈ 1.0; línea ≈ 0.5; mancha ≈ 0.25.
+        Se usa SOLO como desempate en _clasificar_celda cuando no y sí
+        tienen el mismo score. No afecta decisiones ya tomadas.
     """
     vacio = {
         "marcada": False, "dens_total": 0.0, "area_max": 0.0,
         "dens_centro": 0.0, "dens_izq": 0.0, "dens_der": 0.0,
         "stroke_ratio": 0.0,
+        "simetria_diagonal": 0.0,
     }
 
     if celda_binaria is None or celda_binaria.size == 0:
@@ -435,8 +519,7 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
     tinta_total = int(np.sum(limpio > 0))
     dens_total = tinta_total / total_size if total_size > 0 else 0.0
 
-    # Contorno máximo (se mantiene para compatibilidad / debug,
-    # ya NO se usa para calcular stroke_ratio)
+    # Contorno máximo (se mantiene para compatibilidad / debug)
     contornos, _ = cv2.findContours(
         limpio, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
@@ -459,8 +542,11 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
     dens_izq = (np.sum(borde_izq > 0) / borde_izq.size) if borde_izq.size > 0 else 0.0
     dens_der = (np.sum(borde_der > 0) / borde_der.size) if borde_der.size > 0 else 0.0
 
-    # Stroke ratio robusto (por píxeles, no penaliza trazos delgados)
+    # Stroke ratio robusto (por píxeles, con fusión de trazos 3x3)
     stroke_ratio = _stroke_ratio_por_pixeles(limpio)
+
+    # NUEVA señal: simetría diagonal
+    simetria_diagonal = calcular_simetria_diagonal(limpio)
 
     # Decisión de marcada (por densidad total)
     marcada = dens_total >= UMBRAL_DENSIDAD_MARCA
@@ -473,6 +559,7 @@ def analizar_trazo_celda_multisenal(celda_binaria: np.ndarray) -> Dict[str, floa
         "dens_izq": dens_izq,
         "dens_der": dens_der,
         "stroke_ratio": stroke_ratio,
+        "simetria_diagonal": simetria_diagonal,
     }
 
 

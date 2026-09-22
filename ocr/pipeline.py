@@ -20,6 +20,21 @@ FIXES aplicados:
     de reescalarlo (reescalar corrompía el análisis).
   - Añadido check de densidad máxima del diff: si es demasiado alta,
     el diff no está funcionando y se cae a modo clásico.
+  - FASE 1: la carga de archivos pasa por ocr.entrada.cargar_formulario,
+    que acepta PDF, JPG, JPEG, PNG, BMP, TIFF y WEBP. Se detecta el
+    tipo por extensión o por magic bytes. Devuelve siempre una lista
+    de imágenes en escala de grises.
+  - MEJORA anti-artefactos: en _clasificar_celda se detecta cuando
+    una celda tiene dens_centro excesivo (> 0.22). Una X real ocupa
+    0.03-0.15 del centro; más de 0.22 solo puede ser mancha, garabato
+    o sombra. Al detectarlo, se anulan TODAS las señales de esa celda
+    (dens_total, dens_centro, stroke_ratio, dist_transform) para que
+    no vote. La otra celda, si tiene marca real, gana sola.
+  - MEJORA simetría diagonal: en _clasificar_celda se usa
+    simetria_diagonal (calculada en marks.py) como desempate cuando
+    no y sí tienen EXACTAMENTE el mismo score. Una X tiene simetría
+    ~1.0; una línea ~0.5; una mancha ~0.25. Nunca cambia decisiones
+    ya tomadas, solo desempata casos perfectamente empatados.
 """
 
 import io
@@ -32,7 +47,7 @@ import cv2
 import numpy as np
 import pytesseract
 
-from ocr.pdf_to_image import pdf_a_imagenes
+from ocr.entrada import cargar_formulario
 from ocr.preprocess import preprocesar_imagen, binarizar
 from ocr.tables import detectar_3_tablas_geometria
 from ocr.rows import obtener_filas_y_columnas_tabla
@@ -91,6 +106,12 @@ DENSIDAD_ALTA = 0.060
 DENSIDAD_MUY_BAJA = 0.005
 RATIO_OUTLIER = 4.0
 VENTANA_VECINOS = 2
+
+# Detección de artefactos (manchas, garabatos, sombras)
+# Una X real tiene dens_centro entre 0.03 y 0.15. Más de 0.22 solo
+# puede ser un artefacto. Cuando se detecta, se anula la señal de
+# esa celda para que no vote en _clasificar_celda.
+UMBRAL_ARTEFACTO_CENTRO = 0.22
 
 # Guardar imágenes de debug de items marcados
 GUARDAR_DEBUG_ITEMS = True
@@ -271,10 +292,25 @@ def _clasificar_celda(s_no, s_si, umbral, densidades_bloque=None):
     """
     Clasificación con VOTACIÓN PONDERADA.
 
-    La densidad total es ruidosa → peso bajo.
-    Centro + stroke + distance transform → peso alto.
+    MEJORA anti-artefactos: se detecta cuando una celda tiene
+    dens_centro excesivo (> UMBRAL_ARTEFACTO_CENTRO = 0.22). Una X
+    real ocupa 0.03-0.15 del centro; más de 0.22 solo puede ser una
+    mancha, garabato o sombra. Al detectarlo, se anulan TODAS las
+    señales de esa celda (dens_total, dens_centro, stroke_ratio,
+    dist_transform) para que no vote. La otra celda, si tiene marca
+    real, gana sola.
 
-    Solo devuelve "ambos" si TODAS las señales empatan.
+    MEJORA simetría diagonal: cuando no y sí tienen EXACTAMENTE el
+    mismo score, se usa simetria_diagonal como desempate final.
+    Una X toca los 4 cuadrantes (~1.0); una línea toca 2 (~0.5);
+    una mancha toca 1 (~0.25). Solo se activa si el score está
+    perfectamente empatado, así que no cambia decisiones ya tomadas.
+
+    Pesos de la votación (suman 10):
+      - Densidad total: 2 (ruidosa)
+      - Densidad centro: 4 (más fiable)
+      - Stroke ratio: 2
+      - Distance transform: 2
     """
     dens_no = s_no["dens_total"]
     dens_si = s_si["dens_total"]
@@ -284,6 +320,31 @@ def _clasificar_celda(s_no, s_si, umbral, densidades_bloque=None):
     sr_si = s_si.get("stroke_ratio", 0.0)
     dt_no = s_no.get("dist_transform", 0.0)
     dt_si = s_si.get("dist_transform", 0.0)
+
+    # Simetría diagonal (desempate, no decide por sí sola)
+    simetria_no = s_no.get("simetria_diagonal", 0.0)
+    simetria_si = s_si.get("simetria_diagonal", 0.0)
+
+    # --- MEJORA: neutralizar artefactos ---
+    if centro_no > UMBRAL_ARTEFACTO_CENTRO:
+        logger.debug(
+            "Artefacto en 'no' (centro=%.4f > %.2f). Señal anulada.",
+            centro_no, UMBRAL_ARTEFACTO_CENTRO
+        )
+        dens_no = 0.0
+        centro_no = 0.0
+        sr_no = 0.0
+        dt_no = 0.0
+
+    if centro_si > UMBRAL_ARTEFACTO_CENTRO:
+        logger.debug(
+            "Artefacto en 'si' (centro=%.4f > %.2f). Señal anulada.",
+            centro_si, UMBRAL_ARTEFACTO_CENTRO
+        )
+        dens_si = 0.0
+        centro_si = 0.0
+        sr_si = 0.0
+        dt_si = 0.0
 
     # Pesos (suman 10)
     PESO_DENSIDAD = 2
@@ -343,6 +404,15 @@ def _clasificar_celda(s_no, s_si, umbral, densidades_bloque=None):
         if centro_si > centro_no:
             return {"opcion": "si", "puntaje": 1, "confianza": "media"}
         else:
+            return {"opcion": "no", "puntaje": 0, "confianza": "media"}
+
+    # 4.5. Desempate por simetría diagonal (solo si score empatado)
+    # Este bloque NUNCA se ejecuta si el score ya decidió algo.
+    # Solo interviene cuando diff == 0 y la densidad central también empató.
+    if simetria_no != simetria_si:
+        if simetria_si > simetria_no and simetria_si >= 0.5:
+            return {"opcion": "si", "puntaje": 1, "confianza": "media"}
+        if simetria_no > simetria_si and simetria_no >= 0.5:
             return {"opcion": "no", "puntaje": 0, "confianza": "media"}
 
     # 5. Empate real
@@ -602,21 +672,28 @@ def procesar_formulario_pdf(pdf_source):
     mensajes: list = []
 
     try:
-        # 1. Renderizar
+        # 1. Cargar archivo (PDF, JPG, PNG, BMP, TIFF, WEBP)
         try:
-            imagenes = pdf_a_imagenes(pdf_source, dpi=DPI_PROCESAMIENTO)
-        except Exception as e_pdf:
-            logger.error("Error al renderizar PDF: %s", e_pdf, exc_info=True)
+            imagenes = cargar_formulario(pdf_source, dpi=DPI_PROCESAMIENTO)
+        except ValueError as e_doc:
+            logger.error("Error al cargar el archivo: %s", e_doc, exc_info=True)
             return _respuesta_error(marcas, detalles,
-                "El archivo está dañado o no es un PDF válido.")
+                "El archivo está dañado o su formato no está soportado. "
+                "Acepta PDF, JPG, PNG, BMP, TIFF y WEBP.")
+        except Exception as e_doc:
+            logger.error("Error inesperado al cargar el archivo: %s",
+                         e_doc, exc_info=True)
+            return _respuesta_error(marcas, detalles,
+                "No se pudo abrir el archivo. Verifica que no esté corrupto.")
 
         if not imagenes:
             return _respuesta_error(marcas, detalles,
-                "El archivo PDF no contiene páginas legibles.")
+                "El archivo no contiene imágenes legibles.")
 
         if len(imagenes) > 1:
-            logger.warning("PDF con %d páginas. Procesando la primera.", len(imagenes))
-            mensajes.append(f"⚠️ PDF de {len(imagenes)} páginas.")
+            logger.warning("Documento con %d páginas. Procesando la primera.",
+                           len(imagenes))
+            mensajes.append(f"⚠️ Documento de {len(imagenes)} páginas.")
 
         img_np = imagenes[0]
 
@@ -627,7 +704,12 @@ def procesar_formulario_pdf(pdf_source):
         prep = preprocesar_imagen(img_np, metodo_binarizacion="otsu")
         binaria = prep["binaria"]
         gris = prep["gris"]
-        logger.info("Deskew aplicado: %.2f°", prep.get("angulo_correccion", 0.0))
+        es_foto = prep.get("es_foto", False)
+        logger.info(
+            "Preprocesado: deskew=%.2f°, origen=%s",
+            prep.get("angulo_correccion", 0.0),
+            "FOTO" if es_foto else "ESCÁNER"
+        )
 
         es_valida, motivo = _validar_binarizacion(binaria, gris)
         if not es_valida:
@@ -989,10 +1071,10 @@ def procesar_formulario_pdf(pdf_source):
 
     except FileNotFoundError:
         return _respuesta_error(marcas, detalles,
-            "No se pudo acceder al archivo PDF proporcionado.")
+            "No se pudo acceder al archivo proporcionado.")
     except MemoryError:
         return _respuesta_error(marcas, detalles,
-            "La imagen del PDF es demasiado grande.")
+            "La imagen es demasiado grande.")
     except Exception as e:
         logger.error("Excepción no controlada: %s", e, exc_info=True)
         return _respuesta_error(marcas, detalles,

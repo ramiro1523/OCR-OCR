@@ -3,6 +3,16 @@ Detección morfológica de las 3 tablas del formulario IEPPO.
 
 Extrae líneas horizontales y verticales, agrupa coordenadas y detecta
 los bounding boxes de las 3 cuadrículas: E (Estilos), P (Preferencias), H (Habilidad).
+
+FASE 3.4 aplicada:
+  - Y_INICIO_PROPORCION bajado de 0.15 a 0.10.
+    Con fotos (perspectiva + encuadre variable), la fila E1 puede
+    quedar muy cerca del borde superior. Con 0.15 se corría el riesgo
+    de cortarla en la máscara de zona útil. Con 0.10 hay 5% extra
+    de margen superior.
+    rows.py ya está preparado para descartar filas de encabezado
+    (toma las últimas n_esperadas), así que este margen extra no
+    introduce ruido en la detección.
 """
 
 import logging
@@ -18,8 +28,10 @@ logger = logging.getLogger(__name__)
 # CONFIGURACIÓN
 # =============================================================================
 
-# Zona útil de la página (ignorar cabecera y pie)
-Y_INICIO_PROPORCION = 0.15
+# Zona útil de la página (ignorar cabecera y pie).
+# FASE 3.4: bajado de 0.15 a 0.10 para no cortar E1 en fotos con
+# encuadre variable. El pie se mantiene en 0.98.
+Y_INICIO_PROPORCION = 0.10
 Y_FIN_PROPORCION = 0.98
 
 # Filtros de contornos
@@ -148,6 +160,13 @@ def detectar_3_tablas_geometria(binaria: np.ndarray) -> List[Dict[str, Any]]:
         return _fallback_3_columnas(binaria)
 
     zona_h, zona_w = zona_util.shape
+
+    logger.info(
+        "Zona útil: y_inicio=%d (%.0f%%), y_fin=%d (%.0f%%), %dx%d px.",
+        y_inicio, Y_INICIO_PROPORCION * 100,
+        y_fin, Y_FIN_PROPORCION * 100,
+        zona_w, zona_h,
+    )
 
     # -------------------------------------------------------------------------
     # 2. Invertir para que la tinta sea blanca

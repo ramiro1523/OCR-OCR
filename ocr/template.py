@@ -29,11 +29,16 @@ FIXES aplicados:
     produciendo densidades de 0.03+ que forzaban el modo clásico.
     BLACKHAT extrae solo features oscuros locales (tinta real) e ignora
     el nivel de fondo.
+  - FASE 3.3: kernels morfológicos DINÁMICOS. Los tamaños de los
+    kernels de detección de líneas y blackhat se calculan según el
+    tamaño real de la imagen, en lugar de usar constantes fijas.
+    Esto hace que el algoritmo funcione igual si llega una foto a
+    150 DPI, un escáner a 300 DPI o un PDF renderizado a 600 DPI.
 """
 
 import logging
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 
 import cv2
 import numpy as np
@@ -80,16 +85,56 @@ ORB_MIN_INLIERS = 15       # mínimo de inliers para aceptar la homografía
 # estrecho que con absdiff directo, así que 50 funciona bien.
 DIFF_UMBRAL = 50
 
-# Tamaño del kernel para estimar el fondo local en BLACKHAT.
-# Debe ser mayor que el grosor de los trazos pero menor que las celdas.
-# 31 px funciona bien para celdas de ~40-60 px en 300 DPI.
-KERNEL_BLACKHAT = (31, 31)
+# --- Kernels DINÁMICOS (FASE 3.3) ---
+# Los kernels se calculan en función del tamaño real de la imagen.
+# Así el algoritmo funciona igual a 150, 300 o 600 DPI.
+FACTOR_KERNEL_LINEA_H = 80      # kh = ancho_imagen / 80
+FACTOR_KERNEL_LINEA_V = 100     # kv = alto_imagen / 100
+FACTOR_KERNEL_BLACKHAT = 80     # k_bh = min(alto, ancho) / 80
 
-# Kernels para eliminar líneas residuales
-KERNEL_LINEA_H = (30, 1)
-KERNEL_LINEA_V = (1, 30)
+# Mínimos absolutos (para imágenes muy pequeñas)
+KERNEL_LINEA_MIN = 15
+KERNEL_BLACKHAT_MIN = 15
+
+# Kernels FIJOS (no dependen del tamaño)
 KERNEL_DILATAR_LINEAS = (5, 5)
 KERNEL_LIMPIEZA = (2, 2)
+
+
+# =============================================================================
+# CÁLCULO DE KERNELS DINÁMICOS
+# =============================================================================
+
+def _calcular_kernels_dinamicos(
+    h: int,
+    w: int
+) -> Tuple[int, int, int]:
+    """
+    Calcula los tamaños de los kernels morfológicos según la resolución.
+
+    FASE 3.3: en vez de usar constantes fijas calibradas para 300 DPI,
+    los kernels se escalan proporcionalmente al tamaño de la imagen.
+    Eso hace al algoritmo independiente de la resolución de entrada.
+
+    Args:
+        h: alto de la imagen en píxeles.
+        w: ancho de la imagen en píxeles.
+
+    Returns:
+        (kh, kv, k_bh):
+          - kh: kernel horizontal para detectar líneas de tabla.
+          - kv: kernel vertical para detectar líneas de tabla.
+          - k_bh: kernel para BLACKHAT (extraer features oscuros locales).
+    """
+    kh = max(KERNEL_LINEA_MIN, int(w / FACTOR_KERNEL_LINEA_H))
+    kv = max(KERNEL_LINEA_MIN, int(h / FACTOR_KERNEL_LINEA_V))
+    k_bh = max(KERNEL_BLACKHAT_MIN, int(min(h, w) / FACTOR_KERNEL_BLACKHAT))
+
+    # El kernel del blackhat DEBE ser impar para tener centro simétrico
+    if k_bh % 2 == 0:
+        k_bh += 1
+
+    return kh, kv, k_bh
 
 
 # =============================================================================
@@ -358,6 +403,10 @@ def _calcular_diff(
 
     Luego se compara blackhat(scan) vs blackhat(plantilla).
 
+    FASE 3.3: los kernels morfológicos se calculan dinámicamente según
+    el tamaño real de la imagen. Así el algoritmo funciona igual a
+    cualquier resolución (150, 300, 600 DPI).
+
     Args:
         scan_alineado: scan alineado a la plantilla.
         plantilla_gris: plantilla en escala de grises.
@@ -366,12 +415,22 @@ def _calcular_diff(
     Returns:
         Imagen binaria (uint8) con 255 en píxeles de tinta nueva.
     """
+    h, w = scan_alineado.shape[:2]
+
+    # FASE 3.3: kernels dinámicos según resolución real
+    kh, kv, k_bh = _calcular_kernels_dinamicos(h, w)
+
+    logger.debug(
+        "Kernels dinámicos: kh=%d, kv=%d, k_bh=%d (imagen %dx%d)",
+        kh, kv, k_bh, w, h
+    )
+
     # 1. Suavizado ligero para reducir ruido de sensor/JPEG
     scan_blur = cv2.GaussianBlur(scan_alineado, (3, 3), 0)
     plant_blur = cv2.GaussianBlur(plantilla_gris, (3, 3), 0)
 
-    # 2. Kernel para estimar el fondo local
-    kernel_bg = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_BLACKHAT)
+    # 2. Kernel para estimar el fondo local (BLACKHAT)
+    kernel_bg = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k_bh, k_bh))
 
     # 3. BLACKHAT: extrae features oscuros locales, ignora nivel de fondo
     scan_bh = cv2.morphologyEx(scan_blur, cv2.MORPH_BLACKHAT, kernel_bg)
@@ -387,12 +446,12 @@ def _calcular_diff(
     kernel_peq = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_LIMPIEZA)
     diff_limpio = cv2.morphologyEx(diff_bin, cv2.MORPH_OPEN, kernel_peq)
 
-    # 7. Detectar líneas horizontales residuales
-    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, KERNEL_LINEA_H)
+    # 7. Detectar líneas horizontales residuales (kernel dinámico)
+    kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (kh, 1))
     lineas_h = cv2.morphologyEx(diff_limpio, cv2.MORPH_OPEN, kernel_h)
 
-    # 8. Detectar líneas verticales residuales
-    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, KERNEL_LINEA_V)
+    # 8. Detectar líneas verticales residuales (kernel dinámico)
+    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, kv))
     lineas_v = cv2.morphologyEx(diff_limpio, cv2.MORPH_OPEN, kernel_v)
 
     # 9. Dilatar líneas para cubrir sus bordes
@@ -413,8 +472,9 @@ def _calcular_diff(
     densidad = pixeles / total if total > 0 else 0.0
 
     logger.info(
-        "Diff (blackhat): densidad=%.5f (líneas H=%d px, V=%d px)",
-        densidad,
+        "Diff (blackhat, kh=%d kv=%d k_bh=%d): densidad=%.5f "
+        "(líneas H=%d px, V=%d px)",
+        kh, kv, k_bh, densidad,
         int(np.sum(lineas_h_dil > 0)),
         int(np.sum(lineas_v_dil > 0)),
     )

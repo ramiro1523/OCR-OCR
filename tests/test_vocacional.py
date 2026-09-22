@@ -16,7 +16,7 @@ class TestVocacionalEngine(unittest.TestCase):
         }
         self.assertEqual(contar_si(marcas, ["E1"]), 1)
         self.assertEqual(contar_si(marcas, ["E2"]), 0)
-        self.assertEqual(contar_si(marcas, ["E3"]), 1)
+        self.assertEqual(contar_si(marcas, ["E3"]), 0)
         self.assertEqual(contar_si(marcas, ["E4"]), 0)
 
     def test_baremos_mujeres(self):

@@ -38,19 +38,21 @@ def calcular_pd(marcas: dict) -> dict:
     
     return resultado
 
-
 def contar_si(marcas: dict, items: list) -> int:
     """
     Cuenta cuántos ítems tienen marca "Sí".
+    
     Reglas:
-      - Solo "Sí"           → 1 punto
-      - Solo "No"           → 0 puntos
-      - Ambos (X X)         → 1 punto (cuenta como Sí)
-      - Vacío               → 0 puntos
+      - "Sí"    → 1 punto
+      - "No"    → 0 puntos
+      - "Ambos" → 0 puntos
+      - Vacío    → 0 puntos
     """
     total = 0
+
     for item in items:
         estado = marcas.get(item, "vacio")
-        if estado in ("si", "ambos"):
+        if estado == "si":
             total += 1
+
     return total

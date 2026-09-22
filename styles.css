@@ -1,0 +1,373 @@
+/* =============================================================
+   IEPPO — Orientación Vocacional
+   Hoja de estilos global
+   ============================================================= */
+
+:root {
+    --primary:      #2563eb;
+    --primary-dark: #1e40af;
+    --primary-soft: #eff6ff;
+    --success:      #059669;
+    --success-soft: #ecfdf5;
+    --warning:      #d97706;
+    --warning-soft: #fffbeb;
+    --gold:         #f59e0b;
+    --gold-dark:    #b45309;
+    --silver:       #64748b;
+    --silver-dark:  #334155;
+    --border:       #e2e8f0;
+    --text:         #0f172a;
+    --text-soft:    #475569;
+    --bg-soft:      #f8fafc;
+}
+
+/* ─── Chrome de Streamlit ─── */
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding-top: 1.5rem; padding-bottom: 2rem; max-width: 1350px; }
+
+/* ─── Tipografía ─── */
+html, body, [class*="css"] {
+    font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+}
+h1 { font-weight: 700; letter-spacing: -.02em; }
+h2, h3 { font-weight: 650; letter-spacing: -.01em; }
+
+/* =============================================================
+   BARRA DE PASOS
+   ============================================================= */
+.step-bar {
+    display: flex; justify-content: center; gap: 0;
+    margin: 4px 0 28px 0;
+    background: white; border-radius: 12px; padding: 6px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+    border: 1px solid var(--border);
+}
+.step {
+    padding: 10px 32px; font-size: 13px; font-weight: 600;
+    border-radius: 8px; color: var(--text-soft);
+    background: transparent; transition: all .2s;
+    display: flex; align-items: center; gap: 6px;
+}
+.step.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(37,99,235,.35);
+}
+.step.done {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+/* =============================================================
+   MÉTRICAS
+   ============================================================= */
+[data-testid="metric-container"] {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px !important;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    transition: transform .15s, box-shadow .15s;
+}
+[data-testid="metric-container"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15,23,42,.08);
+}
+[data-testid="stMetricLabel"] { font-weight: 600; color: var(--text-soft); }
+[data-testid="stMetricValue"] { font-weight: 700; color: var(--text); }
+
+/* =============================================================
+   BLOQUES Y TABS
+   ============================================================= */
+.bloque-titulo {
+    font-size: 12px; font-weight: 700; color: var(--primary);
+    border-left: 4px solid var(--primary);
+    padding: 5px 12px; margin: 14px 0 8px 0;
+    text-transform: uppercase; letter-spacing: .8px;
+    background: var(--primary-soft);
+    border-radius: 0 6px 6px 0;
+    display: block;
+}
+
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+    gap: 2px;
+    background: var(--bg-soft);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+[data-testid="stTabs"] [data-baseweb="tab"] {
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    color: var(--text-soft);
+}
+[data-testid="stTabs"] [aria-selected="true"] {
+    background: white !important;
+    color: var(--primary) !important;
+    box-shadow: 0 1px 3px rgba(15,23,42,.08);
+}
+[data-testid="stTabs"] [data-baseweb="tab-highlight"] { display: none; }
+[data-testid="stTabs"] [data-baseweb="tab-border"] { display: none; }
+
+/* =============================================================
+   ÍTEMS — Card unificada con st.container(border=True)
+   ============================================================= */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 4px 10px 2px 10px !important;
+    border-radius: 8px !important;
+    border-color: var(--border) !important;
+    background: white;
+    transition: border-color .15s, box-shadow .15s;
+    margin-bottom: 2px;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: var(--primary) !important;
+    box-shadow: 0 2px 8px rgba(37,99,235,.08);
+}
+
+.item-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.item-title.dudoso { color: var(--warning); }
+
+.mini-badge {
+    font-size: 9px;
+    font-weight: 700;
+    background: var(--warning-soft);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    padding: 0 5px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+
+/* Radios compactos dentro de las cards */
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] > div[role="radiogroup"] {
+    gap: 2px !important;
+    flex-wrap: nowrap !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] label {
+    padding: 0 3px !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] label p {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] label > div:first-child {
+    transform: scale(0.72);
+    margin-right: -4px;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"] {
+    margin: 0 !important;
+}
+
+/* =============================================================
+   RESULTADO — Cabecera del estudiante
+   ============================================================= */
+.student-header {
+    display: flex; align-items: center; gap: 18px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white; padding: 22px 28px; border-radius: 16px;
+    margin-bottom: 26px;
+    box-shadow: 0 8px 24px rgba(15,23,42,.18);
+}
+.student-avatar {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: rgba(255,255,255,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700;
+    border: 2px solid rgba(255,255,255,.25);
+}
+.student-name { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.student-meta { font-size: 13px; opacity: .8; margin-top: 2px; }
+
+.section-title {
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--text-soft);
+    margin: 4px 0 14px 0;
+    display: flex; align-items: center; gap: 8px;
+}
+.section-title::after {
+    content: ""; flex: 1; height: 1px; background: var(--border);
+}
+
+/* =============================================================
+   TOP VOCACIONAL
+   ============================================================= */
+.voc-card {
+    border-radius: 14px; padding: 22px 20px; margin-bottom: 14px;
+    color: white; position: relative; overflow: hidden;
+    box-shadow: 0 6px 18px rgba(15,23,42,.12);
+}
+.voc-card.gold {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+.voc-card.silver {
+    background: linear-gradient(135deg, #64748b 0%, #334155 100%);
+}
+.voc-rank {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.2px; opacity: .85; margin-bottom: 6px;
+}
+.voc-tipo {
+    font-size: 20px; font-weight: 700; letter-spacing: -.01em;
+    margin-bottom: 12px; line-height: 1.2;
+}
+.voc-stats {
+    display: flex; gap: 14px; font-size: 13px;
+    background: rgba(0,0,0,.15); padding: 8px 12px;
+    border-radius: 8px;
+}
+.voc-stats b { font-weight: 700; }
+
+/* =============================================================
+   CARRERAS
+   ============================================================= */
+.career-card {
+    background: white; border-radius: 12px; padding: 16px 18px;
+    margin-bottom: 12px; border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    transition: transform .15s, box-shadow .15s;
+}
+.career-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15,23,42,.08);
+}
+.career-card.principal {
+    border-left-color: var(--success);
+    background: linear-gradient(180deg, #ffffff 0%, var(--success-soft) 100%);
+}
+.career-card.respaldo {
+    border-left-color: var(--primary);
+    background: linear-gradient(180deg, #ffffff 0%, var(--primary-soft) 100%);
+}
+.career-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; padding: 3px 8px; border-radius: 999px;
+    display: inline-block; margin-bottom: 8px;
+}
+.career-card.principal .career-badge {
+    background: var(--success); color: white;
+}
+.career-card.respaldo .career-badge {
+    background: var(--primary); color: white;
+}
+.career-name {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    line-height: 1.25; margin-bottom: 4px;
+}
+.career-tipo {
+    font-size: 12px; font-weight: 600; color: var(--text-soft);
+    margin-bottom: 8px;
+}
+.career-rel {
+    font-size: 12px; color: var(--text-soft);
+    line-height: 1.5; font-style: italic;
+    padding-top: 6px; border-top: 1px dashed var(--border);
+}
+
+/* =============================================================
+   PANEL DE CRITERIOS P / E / H
+   ============================================================= */
+.crit-card {
+    position: relative;
+    background: white;
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--primary);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    transition: transform .15s, box-shadow .15s;
+    height: 100%;
+}
+.crit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15,23,42,.08);
+}
+.crit-card.pred {
+    box-shadow: 0 6px 20px rgba(37,99,235,.15);
+}
+.crit-head {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 10px;
+}
+.crit-letter {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 16px;
+    box-shadow: 0 2px 6px rgba(15,23,42,.15);
+}
+.crit-nombre {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    line-height: 1.1;
+}
+.crit-desc {
+    font-size: 11px; color: var(--text-soft);
+    line-height: 1.3; margin-top: 2px;
+}
+.crit-stats {
+    display: flex; gap: 14px;
+    padding: 8px 0;
+    border-top: 1px dashed var(--border);
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 8px;
+}
+.crit-stats > div {
+    display: flex; flex-direction: column;
+}
+.crit-k {
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--text-soft); font-weight: 600;
+}
+.crit-v {
+    font-size: 18px; font-weight: 800; color: var(--text);
+    line-height: 1;
+}
+.crit-tipos {
+    display: flex; flex-wrap: wrap; gap: 4px;
+}
+.crit-chip {
+    font-size: 10px; font-weight: 600;
+    background: var(--bg-soft);
+    color: var(--text-soft);
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+.crit-tag {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .8px;
+    background: var(--primary); color: white;
+    padding: 2px 7px; border-radius: 999px;
+}
+
+/* =============================================================
+   DATAFRAME
+   ============================================================= */
+[data-testid="stDataFrame"] {
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border);
+}

@@ -1,19 +1,39 @@
 """
 Preprocesamiento de imágenes para el pipeline OCR IEPPO.
 
-CONFIGURACIÓN ACTUAL:
+Pipeline:
+  0. Conversión a escala de grises.
+  1. Detección de si es FOTO o ESCÁNER.
+     - Si es foto: detectar hoja + warp de perspectiva (endereza).
+     - Si es escáner: saltar (ya viene plana).
+  2. Normalización de iluminación (solo si es foto).
+  3. Deskew (rotación leve residual).
+  4. Binarización (Otsu o adaptativa).
+
+Configuración de mejoras opcionales:
   - Sustracción de fondo: DESACTIVADA
   - Filtro bilateral: DESACTIVADA
   - CLAHE: DESACTIVADA
   - Sharpen: DESACTIVADO
 
-Esto mantiene la coherencia con la plantilla y calibración de marks.py.
+FASE 2 aplicada:
+  - _detectar_hoja_y_enderezar: detecta el contorno rectangular de la
+    hoja y aplica warp de perspectiva. Resuelve fotos torcidas/en ángulo.
+  - _normalizar_iluminacion: elimina sombras y gradientes de luz
+    dividiendo por un fondo estimado con blur grande.
+  - _es_foto: clasifica automáticamente el origen según contenido en
+    los bordes de la imagen.
+
+FASE 3.5 aplicada:
+  - Deskew usa BORDER_CONSTANT (blanco puro) en vez de BORDER_REPLICATE
+    para no crear franjas negras en las esquinas rotadas que tables.py
+    confundiría con marcos de tabla.
 """
 
 import logging
 import os
 import platform
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 import cv2
 import numpy as np
@@ -53,7 +73,41 @@ HOUGH_MAX_LINE_GAP = 20
 
 
 # =============================================================================
-# FLAGS DE MEJORAS (TODOS DESACTIVADOS)
+# CONFIGURACIÓN DE DETECCIÓN FOTO vs ESCÁNER
+# =============================================================================
+
+# Si el porcentaje de píxeles oscuros en el marco exterior supera este
+# umbral, se asume FOTO (mesa, fondo, sombras alrededor de la hoja).
+# Un escáner tiene los bordes casi blancos → muy pocos oscuros.
+UMBRAL_OSCURO_BORDE_FOTO = 0.02
+ANCHO_MARCO_BORDE = 0.03   # 3% del ancho/alto en cada borde
+
+
+# =============================================================================
+# CONFIGURACIÓN DE DETECCIÓN DE HOJA
+# =============================================================================
+
+# Área mínima de la hoja respecto al área total de la imagen.
+# 0.20 = la hoja ocupa al menos 20% de la foto. Descarta contornos
+# pequeños (objetos, dedos, etc.).
+AREA_MINIMA_HOJA = 0.20
+
+# Epsilon para approxPolyDP (porcentaje del perímetro del contorno).
+# 0.02 = aproximación moderada, acepta esquinas ligeramente curvas.
+EPSILON_POLY = 0.02
+
+
+# =============================================================================
+# CONFIGURACIÓN DE NORMALIZACIÓN DE ILUMINACIÓN
+# =============================================================================
+
+# Tamaño del kernel para estimar el fondo (fracción del menor lado).
+# Un valor muy pequeño deja pasar las sombras; muy grande las exagera.
+FACTOR_BLUR_ILUMINACION = 0.04
+
+
+# =============================================================================
+# FLAGS DE MEJORAS OPCIONALES (TODAS DESACTIVADAS)
 # =============================================================================
 
 APLICAR_SUSTRACCION_FONDO = False
@@ -74,7 +128,7 @@ SHARPEN_STRENGTH = 1.5
 
 
 # =============================================================================
-# FUNCIONES PÚBLICAS
+# FUNCIONES BÁSICAS
 # =============================================================================
 
 def convertir_a_gris(imagen: np.ndarray) -> np.ndarray:
@@ -86,6 +140,285 @@ def convertir_a_gris(imagen: np.ndarray) -> np.ndarray:
         return cv2.cvtColor(imagen, cv2.COLOR_BGRA2GRAY)
     return cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
 
+
+# =============================================================================
+# DETECCIÓN FOTO vs ESCÁNER
+# =============================================================================
+
+def _es_foto(gris: np.ndarray) -> bool:
+    """
+    Decide si la imagen proviene de una foto o de un escáner.
+
+    Criterio: en un escáner, los bordes de la imagen son papel blanco
+    (casi sin píxeles oscuros). En una foto, los bordes suelen contener
+    el fondo (mesa, sombra, dedos) → más píxeles oscuros.
+
+    Returns:
+        True si parece foto, False si parece escáner.
+    """
+    if gris is None or gris.size == 0:
+        return False
+
+    h, w = gris.shape[:2]
+    if h < 50 or w < 50:
+        return False
+
+    # Marco exterior (borde de 3% en cada lado)
+    mh = max(2, int(h * ANCHO_MARCO_BORDE))
+    mw = max(2, int(w * ANCHO_MARCO_BORDE))
+
+    marcos = [
+        gris[:mh, :],           # arriba
+        gris[-mh:, :],          # abajo
+        gris[:, :mw],           # izquierda
+        gris[:, -mw:],          # derecha
+    ]
+
+    total_pix = 0
+    total_oscuros = 0
+    for m in marcos:
+        if m.size == 0:
+            continue
+        total_pix += m.size
+        total_oscuros += int(np.sum(m < 128))
+
+    if total_pix == 0:
+        return False
+
+    proporcion_oscura = total_oscuros / total_pix
+
+    es = proporcion_oscura > UMBRAL_OSCURO_BORDE_FOTO
+    logger.info(
+        "Detección foto/escáner: %.2f%% oscuro en bordes (umbral %.1f%%) → %s",
+        proporcion_oscura * 100.0,
+        UMBRAL_OSCURO_BORDE_FOTO * 100.0,
+        "FOTO" if es else "ESCÁNER",
+    )
+    return es
+
+
+# =============================================================================
+# DETECCIÓN DE HOJA Y WARP DE PERSPECTIVA
+# =============================================================================
+
+def _ordenar_puntos(pts: np.ndarray) -> np.ndarray:
+    """
+    Ordena 4 puntos como [top-left, top-right, bottom-right, bottom-left].
+
+    Args:
+        pts: array (4, 2) float32.
+
+    Returns:
+        array (4, 2) float32 reordenado.
+    """
+    pts = pts.reshape(4, 2).astype(np.float32)
+
+    # Suma y diferencia para clasificar esquinas
+    suma = pts.sum(axis=1)
+    diff = np.diff(pts, axis=1).reshape(-1)
+
+    tl = pts[np.argmin(suma)]
+    br = pts[np.argmax(suma)]
+    tr = pts[np.argmin(diff)]
+    bl = pts[np.argmax(diff)]
+
+    return np.array([tl, tr, br, bl], dtype=np.float32)
+
+
+def _detectar_contorno_hoja(gris: np.ndarray) -> Optional[np.ndarray]:
+    """
+    Detecta el contorno rectangular de la hoja en una foto.
+
+    Estrategia:
+      1. Suavizar + Canny + dilatar para cerrar huecos.
+      2. Encontrar contornos externos.
+      3. Buscar el contorno con 4 esquinas y área grande.
+      4. Fallback: usar minAreaRect del contorno más grande.
+
+    Returns:
+        Array (4, 2) float32 con las 4 esquinas ordenadas, o None.
+    """
+    h, w = gris.shape[:2]
+    area_imagen = h * w
+
+    # 1. Suavizar y detectar bordes
+    blur = cv2.GaussianBlur(gris, (5, 5), 0)
+    bordes = cv2.Canny(blur, 50, 150)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    bordes = cv2.dilate(bordes, kernel, iterations=1)
+    bordes = cv2.morphologyEx(bordes, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+    # 2. Contornos externos
+    contornos, _ = cv2.findContours(
+        bordes, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    if not contornos:
+        logger.warning("No se detectaron contornos en la foto.")
+        return None
+
+    # 3. Buscar el mejor contorno de 4 lados
+    mejor_poly = None
+    mejor_area = 0.0
+
+    for c in sorted(contornos, key=cv2.contourArea, reverse=True)[:10]:
+        area = cv2.contourArea(c)
+        if area < area_imagen * AREA_MINIMA_HOJA:
+            continue
+
+        perim = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, EPSILON_POLY * perim, True)
+
+        if len(approx) == 4:
+            if area > mejor_area:
+                mejor_area = area
+                mejor_poly = approx
+
+    if mejor_poly is not None:
+        logger.info(
+            "Hoja detectada con 4 esquinas (área=%.1f%% de la imagen).",
+            100.0 * mejor_area / area_imagen,
+        )
+        return _ordenar_puntos(mejor_poly)
+
+    # 4. Fallback: minAreaRect del contorno más grande
+    contorno_mas_grande = max(contornos, key=cv2.contourArea)
+    area_grande = cv2.contourArea(contorno_mas_grande)
+
+    if area_grande < area_imagen * AREA_MINIMA_HOJA:
+        logger.warning(
+            "Contorno más grande solo cubre %.1f%% de la imagen. "
+            "No se puede detectar hoja.",
+            100.0 * area_grande / area_imagen,
+        )
+        return None
+
+    rect = cv2.minAreaRect(contorno_mas_grande)
+    caja = cv2.boxPoints(rect)
+    logger.info(
+        "Hoja detectada por minAreaRect (área=%.1f%%).",
+        100.0 * area_grande / area_imagen,
+    )
+    return _ordenar_puntos(caja)
+
+
+def _warp_perspectiva(gris: np.ndarray, esquinas: np.ndarray) -> np.ndarray:
+    """
+    Aplica warp de perspectiva para enderezar la hoja.
+
+    Calcula el tamaño destino a partir de las distancias entre esquinas
+    y aplica getPerspectiveTransform + warpPerspective.
+    """
+    tl, tr, br, bl = esquinas
+
+    ancho_a = np.linalg.norm(br - bl)
+    ancho_b = np.linalg.norm(tr - tl)
+    ancho_dst = int(max(ancho_a, ancho_b))
+
+    alto_a = np.linalg.norm(tr - br)
+    alto_b = np.linalg.norm(tl - bl)
+    alto_dst = int(max(alto_a, alto_b))
+
+    if ancho_dst < 50 or alto_dst < 50:
+        logger.warning(
+            "Tamaño destino inválido tras warp (%dx%d). Se omite.",
+            ancho_dst, alto_dst,
+        )
+        return gris
+
+    dst = np.array([
+        [0, 0],
+        [ancho_dst - 1, 0],
+        [ancho_dst - 1, alto_dst - 1],
+        [0, alto_dst - 1],
+    ], dtype=np.float32)
+
+    M = cv2.getPerspectiveTransform(esquinas, dst)
+    warpeada = cv2.warpPerspective(
+        gris, M, (ancho_dst, alto_dst),
+        flags=cv2.INTER_CUBIC,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=255,
+    )
+
+    logger.info(
+        "Warp aplicado: %s → %dx%d",
+        gris.shape, ancho_dst, alto_dst,
+    )
+    return warpeada
+
+
+def _detectar_hoja_y_enderezar(gris: np.ndarray) -> np.ndarray:
+    """
+    Envuelve detección + warp. Si algo falla, devuelve el gris original.
+    """
+    try:
+        esquinas = _detectar_contorno_hoja(gris)
+        if esquinas is None:
+            logger.info("No se detectó hoja. Se mantiene la imagen original.")
+            return gris
+
+        return _warp_perspectiva(gris, esquinas)
+
+    except Exception as e:
+        logger.warning("Error en detección/warp de hoja: %s", e)
+        return gris
+
+
+# =============================================================================
+# NORMALIZACIÓN DE ILUMINACIÓN
+# =============================================================================
+
+def _normalizar_iluminacion(gris: np.ndarray) -> np.ndarray:
+    """
+    Elimina sombras y gradientes de iluminación.
+
+    Estima el fondo con un blur grande y divide la imagen original por
+    ese fondo. Las zonas oscuras (tinta, texto) quedan oscuras; las
+    zonas claras (papel) quedan uniformemente claras, sin importar la
+    iluminación original.
+
+    Fórmula: normalizada = (gris / fondo) * 255
+    """
+    try:
+        h, w = gris.shape[:2]
+        lado_menor = min(h, w)
+
+        # Kernel del blur: impar, proporcional al tamaño de la imagen
+        ksize = max(31, int(lado_menor * FACTOR_BLUR_ILUMINACION))
+        if ksize % 2 == 0:
+            ksize += 1
+        ksize = min(ksize, lado_menor - 1 if lado_menor % 2 == 1 else lado_menor - 2)
+
+        if ksize < 15:
+            logger.warning("Imagen muy pequeña para normalizar iluminación.")
+            return gris
+
+        # Fondo estimado
+        fondo = cv2.GaussianBlur(gris, (ksize, ksize), 0)
+
+        # Evitar divisiones por cero
+        fondo_f = fondo.astype(np.float32)
+        fondo_f = np.where(fondo_f < 1.0, 1.0, fondo_f)
+
+        gris_f = gris.astype(np.float32)
+        normalizada = (gris_f / fondo_f) * 255.0
+        normalizada = np.clip(normalizada, 0, 255).astype(np.uint8)
+
+        logger.info(
+            "Iluminación normalizada (kernel=%d, imagen %dx%d).",
+            ksize, w, h,
+        )
+        return normalizada
+
+    except Exception as e:
+        logger.warning("Error en normalización de iluminación: %s", e)
+        return gris
+
+
+# =============================================================================
+# DESKEW (con BORDER_CONSTANT tras Fase 3.5)
+# =============================================================================
 
 def corregir_inclinacion(gris: np.ndarray) -> Tuple[np.ndarray, float]:
     if gris is None or gris.size == 0:
@@ -136,10 +469,13 @@ def corregir_inclinacion(gris: np.ndarray) -> Tuple[np.ndarray, float]:
 
         centro = (w // 2, h // 2)
         matriz = cv2.getRotationMatrix2D(centro, angulo_mediana, 1.0)
+
+        # FASE 3.5: BORDER_CONSTANT blanco en vez de BORDER_REPLICATE
         corregida = cv2.warpAffine(
             gris, matriz, (w, h),
             flags=cv2.INTER_CUBIC,
-            borderMode=cv2.BORDER_REPLICATE,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=255,
         )
 
         logger.info("Deskew aplicado: %.2f°", angulo_mediana)
@@ -149,6 +485,10 @@ def corregir_inclinacion(gris: np.ndarray) -> Tuple[np.ndarray, float]:
         logger.error("Error en deskew: %s", e, exc_info=True)
         return gris, 0.0
 
+
+# =============================================================================
+# BINARIZACIÓN
+# =============================================================================
 
 def binarizar(gris: np.ndarray, metodo: str = "otsu") -> np.ndarray:
     if gris is None or gris.size == 0:
@@ -177,7 +517,7 @@ def binarizar(gris: np.ndarray, metodo: str = "otsu") -> np.ndarray:
 
 
 # =============================================================================
-# FUNCIONES DE MEJORA (opcionales, desactivadas)
+# FUNCIONES DE MEJORA OPCIONALES (DESACTIVADAS)
 # =============================================================================
 
 def sustraer_fondo(gris: np.ndarray) -> np.ndarray:
@@ -252,17 +592,46 @@ def aplicar_sharpen(gris: np.ndarray) -> np.ndarray:
 
 def preprocesar_imagen(
     imagen: np.ndarray,
-    metodo_binarizacion: str = "otsu"
+    metodo_binarizacion: str = "otsu",
 ) -> Dict[str, Any]:
+    """
+    Pipeline completo de preprocesamiento.
+
+    Orden:
+      1. Gris.
+      2. Detección foto vs escáner.
+      3. Si es foto:
+         a. Detección de hoja + warp de perspectiva.
+         b. Normalización de iluminación.
+      4. Mejoras opcionales (todas desactivadas por defecto).
+      5. Deskew.
+      6. Binarización.
+
+    Returns:
+        dict con "gris", "binaria", "angulo_correccion", "es_foto".
+    """
     if imagen is None or imagen.size == 0:
         logger.error("preprocesar_imagen: imagen vacía.")
         vacio = np.zeros((100, 100), dtype=np.uint8)
-        return {"gris": vacio, "binaria": vacio, "angulo_correccion": 0.0}
+        return {
+            "gris": vacio, "binaria": vacio,
+            "angulo_correccion": 0.0, "es_foto": False,
+        }
 
     # 1. Escala de grises
     gris = convertir_a_gris(imagen)
 
-    # 2-5. Mejoras opcionales (todas desactivadas por defecto)
+    # 2. Detección foto vs escáner
+    es_foto = _es_foto(gris)
+
+    # 3. Etapas exclusivas de foto
+    if es_foto:
+        # 3a. Enderezar (detección de hoja + warp de perspectiva)
+        gris = _detectar_hoja_y_enderezar(gris)
+        # 3b. Normalizar iluminación
+        gris = _normalizar_iluminacion(gris)
+
+    # 4. Mejoras opcionales (todas desactivadas por defecto)
     mejoras_aplicadas = []
 
     if APLICAR_SUSTRACCION_FONDO:
@@ -284,14 +653,15 @@ def preprocesar_imagen(
     if mejoras_aplicadas:
         logger.info("Mejoras aplicadas: %s", ", ".join(mejoras_aplicadas))
 
-    # 6. Deskew
+    # 5. Deskew
     gris_corregido, angulo = corregir_inclinacion(gris)
 
-    # 7. Binarización
+    # 6. Binarización
     binaria = binarizar(gris_corregido, metodo=metodo_binarizacion)
 
     return {
         "gris": gris_corregido,
         "binaria": binaria,
         "angulo_correccion": angulo,
+        "es_foto": es_foto,
     }

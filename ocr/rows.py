@@ -7,7 +7,7 @@ Robusto a múltiples variaciones de escaneo:
   - Cortes X extra (ruido, líneas verticales tenues o dobles).
   - Cortes X faltantes (líneas tenues no detectadas por morfología).
   - Cortes Y faltantes o duplicados.
-  - Encabezados con 3, 4 o 5 filas.
+  - Encabezados con 3, 4, 5 o más filas.
   - Tablas con proporciones horizontales ligeramente variables.
 
 Layout esperado: [N° ~13% | No ~43% | Sí ~44%]
@@ -17,6 +17,16 @@ Estrategia en 3 capas por cada dimensión (Y y X):
   2. Proyección + agrupación + detección de líneas faltantes.
   3. Validación por contexto (n_filas_esperadas, proporciones del layout).
   4. Fallback proporcional como último recurso.
+
+FASE 3.1 aplicada:
+  - _es_linea_horizontal_valida: nueva función que valida que un pico
+    en la proyección Y corresponda a una línea continua de la tabla y
+    no a un trazo de X gruesa del alumno. Sin esta validación, una
+    marca fuerte cerca del centro de una fila podía generar un corte
+    fantasma que desplazaba todas las filas inferiores.
+  - EXCESO_MAXIMO_ENCABEZADO subido de 4 a 8. Coordinado con Fase 3.4
+    (tables.py con Y_INICIO_PROPORCION=0.10), que deja entrar más
+    filas de encabezado en la zona útil.
 """
 
 import logging
@@ -49,6 +59,7 @@ MARGEN_EXTREMO = 0.04      # Cortes < 4% o > 96% del ancho se descartan
 SEPARACION_MINIMA_X = 0.10
 SEPARACION_MINIMA_W = 0.10  # Separación mínima entre el último corte y w
 
+
 # =============================================================================
 # CONFIGURACIÓN DE DETECCIÓN DE FILAS
 # =============================================================================
@@ -61,7 +72,10 @@ DISTANCIA_MINIMA_X = 15    # Distancia mínima para agrupar cortes X
 
 TOLERANCIA_FILAS = 2       # Tolerancia de filas para reintento
 
-EXCESO_MAXIMO_ENCABEZADO = 4  # Máximo exceso de filas atribuible a encabezado
+# FASE 3.1: subido de 4 a 8. Con Fase 3.4 (tables.py usa Y_INICIO=0.10),
+# la zona útil incluye más filas de encabezado y el exceso puede llegar
+# a 6-7 sin que sea un error.
+EXCESO_MAXIMO_ENCABEZADO = 8
 
 # Rangos de altura de fila respecto a la mediana (para filtrado)
 FILTRO_ALTURA_MIN = 0.5
@@ -72,6 +86,11 @@ FILTRO_ALTURA_MAX_RELAJADO = 2.5
 # Detección de líneas Y faltantes
 FACTOR_ESPACIO_ANOMALO = 1.6   # Espacio > 1.6x la mediana → buscar línea faltante
 UMBRAL_PICO_LOCAL = 0.20       # Umbral del pico local (fracción del máximo en zona)
+
+# FASE 3.1: cobertura mínima de una línea horizontal válida (fracción del ancho).
+# Una línea de tabla real cubre >90% del ancho. Un trazo de X cubre <5%.
+# 0.35 es conservador: acepta líneas erosionadas pero rechaza trazos puntuales.
+COBERTURA_MINIMA_LINEA = 0.35
 
 
 # =============================================================================
@@ -293,8 +312,52 @@ def _detectar_filas(
 
 
 # =============================================================================
-# DETECCIÓN DE LÍNEA FALTANTE
+# DETECCIÓN DE LÍNEA FALTANTE (FASE 3.1 con validación de continuidad)
 # =============================================================================
+
+def _es_linea_horizontal_valida(
+    lineas_h: np.ndarray,
+    y: int,
+    min_cobertura_horizontal: float = COBERTURA_MINIMA_LINEA
+) -> bool:
+    """
+    Valida que el pico 'y' corresponda a una línea de tabla continua
+    y no a un trazo de lapicero (X gruesa, mancha, etc.).
+
+    Una línea de tabla real cubre casi todo el ancho de la ROI (>90%).
+    Un trazo de X cubre solo unos pocos píxeles de ancho. El umbral
+    de 0.35 es conservador: acepta líneas parcialmente erosionadas
+    pero rechaza cualquier trazo puntual.
+
+    Args:
+        lineas_h: imagen de líneas horizontales aisladas (blanco=tinta).
+        y: coordenada Y del pico a validar.
+        min_cobertura_horizontal: fracción mínima del ancho que debe
+            estar cubierta por píxeles de línea.
+
+    Returns:
+        True si el pico es una línea continua, False si es un trazo puntual.
+    """
+    if lineas_h is None or lineas_h.size == 0:
+        return False
+
+    if y < 0 or y >= lineas_h.shape[0]:
+        return False
+
+    # Tomar una franja de 3 px centrada en y (±1) para ser tolerante
+    y_min = max(0, y - 1)
+    y_max = min(lineas_h.shape[0], y + 2)
+    franja = lineas_h[y_min:y_max, :]
+
+    if franja.size == 0:
+        return False
+
+    # Cuántas columnas de la franja tienen al menos un píxel de línea
+    columnas_con_linea = np.any(franja > 0, axis=0)
+    cobertura = float(np.count_nonzero(columnas_con_linea)) / float(lineas_h.shape[1])
+
+    return cobertura >= min_cobertura_horizontal
+
 
 def _detectar_linea_faltante(
     lineas_h: np.ndarray,
@@ -306,6 +369,12 @@ def _detectar_linea_faltante(
 
     Si el espacio entre dos cortes consecutivos es >1.6x la mediana,
     busca un pico local en la proyección de esa zona y añade un corte.
+
+    FASE 3.1: antes de aceptar el pico como línea faltante, se valida
+    que sea una línea continua de tabla. Un trazo de X gruesa del alumno
+    puede generar un pico en la proyección Y, y sin esta validación el
+    código insertaba un corte fantasma que desplazaba todas las filas
+    inferiores.
     """
     if len(y_cortes) < 3:
         return y_cortes
@@ -324,6 +393,7 @@ def _detectar_linea_faltante(
 
     y_cortes_nuevos = [y_cortes[0]]
     añadidas = 0
+    rechazadas = 0
 
     for i in range(len(y_cortes) - 1):
         y1 = y_cortes[i]
@@ -345,18 +415,36 @@ def _detectar_linea_faltante(
 
                     if zona[idx_max] > umbral_local:
                         y_nuevo = y1 + idx_max
-                        y_cortes_nuevos.append(y_nuevo)
-                        añadidas += 1
-                        logger.info(
-                            "Línea faltante detectada en y=%d (espacio %d > %.0f).",
-                            y_nuevo, espacio, umbral_espacio
-                        )
+
+                        # FASE 3.1: validar continuidad horizontal
+                        if _es_linea_horizontal_valida(lineas_h, y_nuevo):
+                            y_cortes_nuevos.append(y_nuevo)
+                            añadidas += 1
+                            logger.info(
+                                "Línea faltante válida detectada en y=%d "
+                                "(espacio %d > %.0f).",
+                                y_nuevo, espacio, umbral_espacio
+                            )
+                        else:
+                            rechazadas += 1
+                            logger.debug(
+                                "Pico ignorado en y=%d: no es línea continua "
+                                "(posible marca del alumno).",
+                                y_nuevo
+                            )
 
         y_cortes_nuevos.append(y2)
 
     if añadidas > 0:
         logger.info("Líneas faltantes añadidas: %d (%d → %d cortes).",
                     añadidas, len(y_cortes), len(y_cortes_nuevos))
+
+    if rechazadas > 0:
+        logger.info(
+            "Picos rechazados por falta de continuidad: %d "
+            "(evitaron cortes fantasma).",
+            rechazadas
+        )
 
     return y_cortes_nuevos
 
@@ -608,4 +696,3 @@ def _filas_uniformes(h: int, n_filas_esperadas: int) -> List[Dict[str, int]]:
         filas.append({"y1": y1, "y2": min(h, y2)})
 
     return filas
-
