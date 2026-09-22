@@ -365,6 +365,132 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
 }
 
 /* =============================================================
+   PASO 4 — PROPUESTA DEL ESTUDIANTE
+   ============================================================= */
+
+.proposal-box {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    margin-bottom: 16px;
+}
+.proposal-box h4 {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    text-transform: uppercase; letter-spacing: .6px;
+    margin: 0 0 4px 0;
+}
+.proposal-box p {
+    font-size: 12px; color: var(--text-soft);
+    margin: 0 0 14px 0; line-height: 1.4;
+}
+
+.proposal-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border);
+}
+.proposal-num {
+    width: 24px; height: 24px; flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--primary); color: white;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.proposal-carrera {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    flex: 1;
+}
+.proposal-origen {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 999px;
+    letter-spacing: .5px;
+}
+.proposal-origen.test {
+    background: var(--success-soft); color: var(--success);
+    border: 1px solid var(--success);
+}
+.proposal-origen.alumno {
+    background: var(--warning-soft); color: var(--warning);
+    border: 1px solid var(--warning);
+}
+.proposal-origen.final {
+    background: var(--primary); color: white;
+    border: 1px solid var(--primary-dark);
+}
+
+/* Card de resultado final */
+.final-card {
+    position: relative;
+    background: linear-gradient(180deg, #ffffff 0%, var(--primary-soft) 100%);
+    border: 1px solid var(--primary);
+    border-left: 5px solid var(--primary);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(37,99,235,.12);
+}
+.final-card .rank {
+    position: absolute; top: 12px; right: 14px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px;
+    background: var(--primary); color: white;
+    padding: 3px 9px; border-radius: 999px;
+}
+.final-card .name {
+    font-size: 18px; font-weight: 700; color: var(--text);
+    line-height: 1.2; margin-bottom: 8px;
+    padding-right: 80px;
+}
+.final-card .meta {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 10px;
+}
+.meta-chip {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px;
+    background: white; color: var(--text-soft);
+    border: 1px solid var(--border);
+}
+.meta-chip.nivel-univ {
+    background: #eff6ff; color: #1e40af; border-color: #bfdbfe;
+}
+.meta-chip.nivel-tec {
+    background: #fef3c7; color: #92400e; border-color: #fde68a;
+}
+.meta-chip.nivel-cetpro {
+    background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
+}
+.meta-chip.inst-pub {
+    background: #ecfeff; color: #155e75; border-color: #a5f3fc;
+}
+.meta-chip.inst-priv {
+    background: #fdf2f8; color: #9d174d; border-color: #fbcfe8;
+}
+.final-card .score-bar {
+    height: 6px; border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+    margin-top: 8px;
+}
+.final-card .score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    transition: width .4s ease;
+}
+
+/* Selector de nivel / institución */
+.select-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 6px;
+}
+/* =============================================================
    DATAFRAME
    ============================================================= */
 [data-testid="stDataFrame"] {

@@ -206,3 +206,23 @@ def seleccionar_4_carreras(tipo_top1: str, tipo_top2: str) -> dict:
         "principales": principales,
         "respaldo": respaldo
     }
+
+
+# ─────── Prueba desde consola ───────
+#   python -m vocacional.carreras
+if __name__ == "__main__":
+    for t1, t2 in [
+        ("INVESTIGATIVO", "TÉCNICO MECÁNICO"),
+        ("SOCIAL", "ARTÍSTICO"),
+        ("EMPRENDEDOR", "ORGANIZADO"),
+    ]:
+        print(f"\n═══ {t1}  +  {t2} ═══")
+        try:
+            r = seleccionar_4_carreras(t1, t2)
+        except Exception as e:
+            print(f"  Error: {e}")
+            continue
+        for c in r["principales"]:
+            print(f"  [P] {c['carrera']:35} [{c['tipo']}]  →  {c['relacion']}  ({c['puntaje']} pts)")
+        for c in r["respaldo"]:
+            print(f"  [R] {c['carrera']:35} [{c['tipo']}]  →  {c['relacion']}  ({c['puntaje']} pts)")
