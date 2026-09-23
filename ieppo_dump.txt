@@ -1,0 +1,380 @@
+======================================================================
+DUMP EXCEL IEPPO
+Archivo: analizar.xlsx
+======================================================================
+
+## 1. HOJAS
+  · PHB [Worksheet] (hidden) — A2:CJ367
+  · Gráfico1 [Chartsheet] (visible) — —
+  · Gráfico2 [Chartsheet] (visible) — —
+  · Gráfico4 [Chartsheet] (visible) — —
+  · Gráfico5 [Chartsheet] (visible) — —
+  · Gráfico6 [Chartsheet] (visible) — —
+  · Gráfico7 [Chartsheet] (visible) — —
+  · Gráfico8 [Chartsheet] (visible) — —
+  · Gráfico9 [Chartsheet] (visible) — —
+  · Gráfico10 [Chartsheet] (visible) — —
+  · Gráfico11 [Chartsheet] (visible) — —
+  · Gráfico12 [Chartsheet] (visible) — —
+  · Gráfico13 [Chartsheet] (visible) — —
+  · Gráfico14 [Chartsheet] (visible) — —
+  · Gráfico15 [Chartsheet] (visible) — —
+  · Gráfico16 [Chartsheet] (visible) — —
+  · Gráfico17 [Chartsheet] (visible) — —
+  · Gráfico18 [Chartsheet] (visible) — —
+  · Gráfico19 [Chartsheet] (visible) — —
+  · Gráfico20 [Chartsheet] (visible) — —
+  · Gráfico21 [Chartsheet] (visible) — —
+  · Gráfico3 [Chartsheet] (visible) — —
+  · Gráfico22 [Chartsheet] (visible) — —
+  · Gráfico23 [Chartsheet] (visible) — —
+  · TEPE [Worksheet] (visible) — A2:IV5607
+  · Gráfico24 [Chartsheet] (visible) — —
+  · Gráfico25 [Chartsheet] (visible) — —
+  · Gráfico26 [Chartsheet] (visible) — —
+  · INFORME [Worksheet] (visible) — A1:AV2112
+  · IEPPO [Worksheet] (visible) — A1:BC7266
+  · Hoja1 [Worksheet] (visible) — B4:B9
+
+## 2. NOMBRES DEFINIDOS
+  · ALTO → INFORME!$Z$13:$Z$17
+  · BAJO → INFORME!$X$13:$X$17
+  · BAREMO → INFORME!$W$13:$W$17
+  · BENEF.PARCIAL1 → #REF!
+  · MEDIO → INFORME!$Y$13:$Y$17
+
+## 3. HOJAS CLAVE DETECTADAS: ['INFORME', 'IEPPO', 'Hoja1']
+
+#### Hoja: INFORME  (dims: A1:AV2112)
+  Estado: visible
+  T4='=IF(X27="X",">Potencial empresarial Bajo",IF(Y27="X",">Potencial empresarial En Desarrollo",">Potencial empresarial Desarrollado"))'
+  T5='=IF(T4=">Potencial empresarial Desarrollado","Estimación de la probabilidad de éxito de crear y gestionar un negocio propio. Dicha estimación parte de comparar el perfil de los evaluados con respecto al perfil del empresario exitoso de la pequeña y micro empresa.",IF(T4=">Potencial empresarial En De…'
+  B7='Nombre del evaluado(a):' | G7='KON LEO FLORES MEN'
+  F8=' '
+  B9='DNI:' | G9='Fecha de eval:' | H9=datetime.datetime(2026, 4, 30, 0, 0) | K9='  Edad:' | L9=15 | N9='Género:' | P9='M'
+  B11='Grado de instruc:' | D11='4°' | G11='SECUNDARIA INCOMPLETA' | I11='II.EE' | L11='JULIO CESAR BENAVENTE DIAZ'
+  B12='Evaluador(a):' | E12='|' | U12='N°' | V12='Área' | W12='Baremo' | X12='Nivel de la habilidad'
+  U13=1 | V13='Atención' | W13='=PHB!G21' | X13='=IF(BAREMO<=40,"X"," ")' | Y13='=IF(W13>=60," ",(IF(W13>=41,"X"," ")))' | Z13='=IF(W13>=60,"X"," ")'
+  U14=2 | V14='Habilidad Numérica' | W14='=PHB!O16' | X14='=IF(BAREMO<=40,"X"," ")' | Y14='=IF(W14>=60," ",(IF(W14>=41,"X"," ")))' | Z14='=IF(W14>=60,"X"," ")'
+  U15=3 | V15='Razonamiento' | W15='=PHB!X18' | X15='=IF(BAREMO<=40,"X"," ")' | Y15='=IF(W15>=60," ",(IF(W15>=41,"X"," ")))' | Z15='=IF(W15>=60,"X"," ")'
+  U16=4 | V16='Vocabulario' | W16='=PHB!AE39' | X16='=IF(BAREMO<=40,"X"," ")' | Y16='=IF(W16>=60," ",(IF(W16>=41,"X"," ")))' | Z16='=IF(W16>=60,"X"," ")'
+  U17=5 | V17='Espacial' | W17='=PHB!AO24' | X17='=IF(BAREMO<=40,"X"," ")' | Y17='=IF(W17>=60," ",(IF(W17>=41,"X"," ")))' | Z17='=IF(W17>=60,"X"," ")'
+  U19='˃ Tipificación vocacional (Estilo personal y preferencia ocupacional)'
+  U20='N°' | V20='Tipos vocacionales' | W20='Baremo' | X20='Nivel de correspondencia'
+  X21='bajo' | Y21='medio' | Z21='alto'
+  U22=1 | V22='Liderazgo' | W22='=IEPPO!AL11' | X22='X'
+  U23=2 | V23='Técnico-Mecánico' | W23='=IEPPO!AL12' | X23='X'
+  U24=3 | V24='Social' | W24='=IEPPO!AL13' | X24='X'
+  U25=4 | V25='Organizado' | W25='=IEPPO!AL14' | Y25='X'
+  U26=5 | V26='Artístico' | W26='=IEPPO!AL15' | X26='X'
+  U27=6 | V27='Empredimiento' | W27='=IEPPO!AL16' | Y27='X'
+  U28=7 | V28='Investigación' | W28='=IEPPO!AL17' | X28='X'
+  U30='˃ Potencial Empresarial'
+  U31='=IF(X27="X","POTENCIAL EMPRESARIAL BAJO", IF(Y27="X","POTENCIAL EMPRESARIAL EN DESARROLLO", "POTENCIAL EMPRESARIAL DESARROLLADO"))' | AA31=' '
+  U34='˃ Observaciones:'
+  U39='De acuerdo a los resultados obtenidos podemos mencionar que el alumno puede desarrollar sus habilidades dentro de los tipos INVESTIGACION Y ORGANIZADO dentro de las carreras opcionales como primera opción SOCIOLOGIA Y GUIA OFICIAL DE TURISMO.'
+  V44='                    '
+  B46='Servicio de Orientación Vocacional e Información Ocupacional -' | M46='GRTPE CUSCO'
+  B47='Dirección:'
+  B48='Teléfono:' | I48='E-Mail'
+
+#### Hoja: IEPPO  (dims: A1:BC7266)
+  Estado: visible
+  B2='INVENTARIO DE ESTILOS PERSONALES Y PREFERENCIAS OCUPACIONALES - IEPPO'
+  B4='SEXO' | D4='M' | I4='M= masculino'
+  I5='F = femenino'
+  B7='ESTILOS PERSONALES' | I7='ACTIVIDADES DE PREFERENCIA' | P7='PERCEPCIÓN DE  HABILIDAD' | X7='TIPO VOCACIONAL' | Y7='SUMA ESTILOS PERSONALES' | Z7='SUMA ACTIVIDADES PREFERENCIAS' | AA7='SUMA PERCEPCIÓN DE HABILIDADES' | AB7='SUMA TOTAL' | AC7='BAREMOS FINAL'
+  C8='NO SE PARECE A MI' | D8='SI SE PARECE A MI' | J8='NO ME INTERESA' | K8='SI  ME INTERESA' | Q8='NO SOY HABIL' | R8='SI SOY HABIL'
+  B9='E1' | D9='X' | F9='=IF(D9="X",1,0)' | I9='P1' | J9='X' | M9='=IF(K9="X",1,0)' | P9='H1' | Q9='X' | T9='=IF(R9="X",1,0)' | X9='LIDERAZGO' | Y9='=AH11' | Z9='=AI11' | AA9='=AJ11' | AB9='=AK11' | AC9='=AL11' | AG9='TIPO VOCACIONAL' | AH9='SUMA ESTILOS PERSONALES' | AI9='SUMA ACTIVIDADES PREFERENCIAS' | AJ9='SUMA PERCEPCION DE HABILIDADES' | AK9='SUMA TOTAL' | AL9='BAREMOS FINAL'
+  B10='E2' | C10='X' | F10='=IF(D10="X",1,0)' | I10='P2' | J10='X' | M10='=IF(K10="X",1,0)' | P10='H2' | Q10='X' | T10='=IF(R10="X",1,0)'
+  B11='E3' | D11='X' | F11='=IF(D11="X",1,0)' | I11='P3' | J11='X' | M11='=IF(K11="X",1,0)' | P11='H3' | R11='X' | T11='=IF(R11="X",1,0)' | X11='TÉCNICO MECÁNICO' | Y11='=AH12' | Z11='=AI12' | AA11='=AJ12' | AB11='=AK12' | AC11='=AL12' | AG11='LIDERAZGO' | AH11='=SUM(F9:F14)' | AI11='=SUM(M9:M14)' | AJ11='=SUM(T9:T16)' | AK11='=SUM(AH11:AJ11)' | AL11='=IF(D4="F",AI44,(IF(D4="M",AT44,"NULO")))'
+  B12='E4' | D12='X' | F12='=IF(C12="X",1,0)' | I12='P4' | J12='X' | M12='=IF(K12="X",1,0)' | P12='H4' | R12='X' | T12='=IF(R12="X",1,0)' | AG12='TECNICO MECANICO' | AH12='=SUM(F15:F18)' | AI12='=SUM(M15:M19)' | AJ12='=SUM(T17:T21)' | AK12='=SUM(AH12:AJ12)' | AL12='=IF(D4="F",AJ38,(IF(D4="M",AU38, "NULO")))'
+  B13='E5' | D13='X' | F13='=IF(D13="X",1,0)' | I13='P5' | J13='X' | M13='=IF(K13="X",1,0)' | P13='H5' | R13='X' | T13='=IF(R13="X",1,0)' | X13='SOCIAL' | Y13='=AH13' | Z13='=AI13' | AA13='=AJ13' | AB13='=AK13' | AC13='=AL13' | AG13='SOCIAL' | AH13='=SUM(F19:F23)' | AI13='=SUM(M20:M25)' | AJ13='=SUM(T22:T25)' | AK13='=SUM(AH13:AJ13)' | AL13='=IF(D4="F",AK39,(IF(D4="M",AV39,"NULO")))'
+  B14='E6' | C14='X' | E14='=AH11' | F14='=IF(D14="X",1,0)' | I14='P6' | J14='X' | L14='=AI11' | M14='=IF(K14="X",1,0)' | P14='H6' | Q14='X' | T14='=IF(R14="X",1,0)' | AG14='ORGANIZADO' | AH14='=SUM(F24:F29)' | AI14='=SUM(M26:M32)' | AJ14='=SUM(T26:T32)' | AK14='=SUM(AH14:AJ14)' | AL14='=IF(D4="F",AL45,(IF(D4="M",AW45,"NULO")))'
+  B15='E7' | D15='X' | F15='=IF(D15="X",1,0)' | I15='P7' | J15='X' | M15='=IF(K15="X",1,0)' | P15='H7' | Q15='X' | T15='=IF(R15="X",1,0)' | X15='ORGANIZADO' | Y15='=AH14' | Z15='=AI14' | AA15='=AJ14' | AB15='=AK14' | AC15='=AL14' | AG15='ARTISTICO' | AH15='=SUM(F30:F33)' | AI15='=SUM(M33:M40)' | AJ15='=SUM(T33:T36)' | AK15='=SUM(AH15:AJ15)' | AL15='=IF(D4="F",AM40,(IF(D4="M",AX40,"NULO")))'
+  B16='E8' | D16='X' | F16='=IF(D16="X",1,0)' | I16='P8' | K16='X' | M16='=IF(K16="X",1,0)' | P16='H8' | Q16='X' | S16='=AJ11' | T16='=IF(R16="X",1,0)' | AG16='AMPRENDEDOR' | AH16='=SUM(F34:F41)' | AI16='=SUM(M41:M47)' | AJ16='=SUM(T37:T42)' | AK16='=SUM(AH16:AJ16)' | AL16='=IF(D4="F",AN45,(IF(D4="M",AY45,"NULO")))'
+  B17='E9' | C17='X' | F17='=IF(D17="X",1,0)' | I17='P9' | K17='X' | M17='=IF(K17="X",1,0)' | P17='H9' | Q17='X' | T17='=IF(R17="X",1,0)' | X17='ARTÍSTICO' | Y17='=AH15' | Z17='=AI15' | AA17='=AJ15' | AB17='=AK15' | AC17='=AL15' | AG17='INVESTIGATIVO' | AH17='--' | AI17='=SUM(M48:M55)' | AJ17='=SUM(T43:T46)' | AK17='=SUM(AI17:AJ17)' | AL17='=IF(D4="F",AO36,(IF(D4="M",AZ36,"NULO")))'
+  B18='E10' | D18='X' | E18='=AH12' | F18='=IF(D18="X",1,0)' | I18='P10' | K18='X' | M18='=IF(K18="X",1,0)' | P18='H10' | R18='X' | T18='=IF(R18="X",1,0)' | AJ18=' '
+  B19='E11' | D19='X' | F19='=IF(D19="X",1,0)' | I19='P11' | J19='X' | L19='=AI12' | M19='=IF(K19="X",1,0)' | P19='H11' | R19='X' | T19='=IF(R19="X",1,0)' | X19='EMPRENDEDOR' | Y19='=AH16' | Z19='=AI16' | AA19='=AJ16' | AB19='=AK16' | AC19='=AL16'
+  B20='E12' | D20='X' | F20='=IF(D20="X",1,0)' | I20='P12' | J20='X' | M20='=IF(K20="X",1,0)' | P20='H12' | Q20='X' | T20='=IF(R20="X",1,0)' | AG20='MUJERES' | AI20='LIDERAZGO' | AJ20='TECNICO-MECANICO' | AK20='SOCIAL' | AL20='ORGANIZADO' | AM20='ARTISTICO' | AN20='EMPRENDIMINETO' | AO20='INVESTIGATIVO' | AR20='VARONES' | AT20='LIDERAZGO' | AU20='TECNICO-MECANICO' | AV20='SOCIAL' | AW20='ORGANIZADO' | AX20='ARTISTICO' | AY20='EMPRENDIMINETO' | AZ20='INVESTIGATIVO'
+  B21='E13' | D21='X' | F21='=IF(D21="X",1,0)' | I21='P13' | J21='X' | M21='=IF(K21="X",1,0)' | P21='H13' | Q21='X' | S21='=AJ12' | T21='=IF(R21="X",1,0)' | X21='INVESTIGATIVO' | Y21='----' | Z21='=AI17' | AA21='=AJ17' | AB21='=AK17' | AC21='=AL17' | AG21='TIPO VOCACIONAL' | AH21='SUMA TOTAL' | AR21='TIPO VOCACIONAL' | AS21='SUMA TOTAL'
+  B22='E14' | D22='X' | F22='=IF(D22="X",1,0)' | I22='P14' | J22='X' | M22='=IF(K22="X",1,0)' | P22='H14' | Q22='X' | T22='=IF(R22="X",1,0)'
+  B23='E15' | D23='X' | E23='=AH13' | F23='=IF(D23="X",1,0)' | I23='P15' | J23='X' | M23='=IF(K23="X",1,0)' | P23='H15' | Q23='X' | T23='=IF(R23="X",1,0)' | AG23='LIDERAZGO' | AH23='=AK11' | AI23='=IF(AH23=0,28,0)' | AJ23='=IF(AH24=0,34,0)' | AK23='=IF(AH25=0,18,0)' | AL23='=IF(AH26=0,30,0)' | AM23='=IF(AH27=0,25,0)' | AN23='=IF(AH28=0,23,0)' | AO23='=IF(AH29=0,28,0)' | AR23='LIDERAZGO' | AS23='=AK11' | AT23='=IF(AS23=0,30,0)' | AU23='=IF(AS24=0,27,0)' | AV23='=IF(AS25=0,20,0)' | AW23='=IF(AS26=0,29,0)' | AX23='=IF(AS27=0,29,0)' | AY23='=IF(AS28=0,23,0)' | AZ23='=IF(AS29=0,31,0)'
+  B24='E16' | C24='X' | F24='=IF(D24="X",1,0)' | I24='P16' | J24='X' | M24='=IF(K24="X",1,0)' | P24='H16' | Q24='X' | T24='=IF(R24="X",1,0)' | AG24='TECNICO MECANICO' | AH24='=AK12' | AI24='=IF(AH23=1,30,0)' | AJ24='=IF(AH24=1,38,0)' | AK24='=IF(AH25=1,21,0)' | AL24='=IF(AH26=1,32,0)' | AM24='=IF(AH27=1,27,0)' | AN24='=IF(AH28=1,25,0)' | AO24='=IF(AH29=1,31,0)' | AR24='TECNICO MECANICO' | AS24='=AK12' | AT24='=IF(AS23=1,32,0)' | AU24='=IF(AS24=1,30,0)' | AV24='=IF(AS25=1,30,0)' | AW24='=IF(AS26=1,31,0)' | AX24='=IF(AS27=1,31,0)' | AY24='=IF(AS28=1,25,0)' | AZ24='=IF(AS29=1,34,0)'
+  B25='E17' | C25='X' | F25='=IF(D25="X",1,0)' | I25='P17' | K25='X' | L25='=AI13' | M25='=IF(K25="X",1,0)' | P25='H17' | Q25='X' | S25='=AJ13' | T25='=IF(R25="X",1,0)' | V25='                                                                                                                                                                                                                                                                                                            …' | AG25='SOCIAL' | AH25='=AK13' | AI25='=IF(AH23=2,32,0)' | AJ25='=IF(AH24=2,41,0)' | AK25='=IF(AH25=2,24,0)' | AL25='=IF(AH26=2,34,0)' | AM25='=IF(AH27=2,30,0)' | AN25='=IF(AH28=2,27,0)' | AO25='=IF(AH29=2,34,0)' | AR25='SOCIAL' | AS25='=AK13' | AT25='=IF(AS23=2,34,0)' | AU25='=IF(AS24=2,33,0)' | AV25='=IF(AS25=2,33,0)' | AW25='=IF(AS26=2,33,0)' | AX25='=IF(AS27=2,34,0)' | AY25='=IF(AS28=2,27,0)' | AZ25='=IF(AS29=2,37,0)'
+  B26='E18' | D26='X' | F26='=IF(D26="X",1,0)' | I26='P18' | J26='X' | M26='=IF(K26="X",1,0)' | P26='H18' | Q26='X' | T26='=IF(R26="X",1,0)' | AG26='ORGANIZADO' | AH26='=AK14' | AI26='=IF(AH23=3,34,0)' | AJ26='=IF(AH24=3,44,0)' | AK26='=IF(AH25=3,27,0)' | AL26='=IF(AH26=3,36,0)' | AM26='=IF(AH27=3,33,0)' | AN26='=IF(AH28=3,29,0)' | AO26='=IF(AH29=3,37,0)' | AR26='ORGANIZADO' | AS26='=AK14' | AT26='=IF(AS23=3,36,0)' | AU26='=IF(AS24=3,36,0)' | AV26='=IF(AS25=3,36,0)' | AW26='=IF(AS26=3,36,0)' | AX26='=IF(AS27=3,36,0)' | AY26='=IF(AS28=3,29,0)' | AZ26='=IF(AS29=3,40,0)'
+  B27='E19' | C27='X' | F27='=IF(D27="X",1,0)' | I27='P19' | K27='X' | M27='=IF(K27="X",1,0)' | P27='H19' | R27='X' | T27='=IF(R27="X",1,0)' | AG27='ARTISTICO' | AH27='=AK15' | AI27='=IF(AH23=4,36,0)' | AJ27='=IF(AH24=4,47,0)' | AK27='=IF(AH25=4,30,0)' | AL27='=IF(AH26=4,38,0)' | AM27='=IF(AH27=4,35,0)' | AN27='=IF(AH28=4,31,0)' | AO27='=IF(AH29=4,41,0)' | AR27='ARTISTICO' | AS27='=AK15' | AT27='=IF(AS23=4,38,0)' | AU27='=IF(AS24=4,39,0)' | AV27='=IF(AS25=4,36,0)' | AW27='=IF(AS26=4,38,0)' | AX27='=IF(AS27=4,39,0)' | AY27='=IF(AS28=4,32,0)' | AZ27='=IF(AS29=4,44,0)'
+  B28='E20' | C28='X' | F28='=IF(D28="X",1,0)' | I28='P20' | K28='X' | M28='=IF(K28="X",1,0)' | P28='H20' | Q28='X' | T28='=IF(R28="X",1,0)' | AG28='AMPRENDEDOR' | AH28='=AK16' | AI28='=IF(AH23=5,38,0)' | AJ28='=IF(AH24=5,51,0)' | AK28='=IF(AH25=5,33,0)' | AL28='=IF(AH26=5,40,0)' | AM28='=IF(AH27=5,38,0)' | AN28='=IF(AH28=5,33,0)' | AO28='=IF(AH29=5,44,0)' | AR28='AMPRENDEDOR' | AS28='=AK16' | AT28='=IF(AS23=5,40,0)' | AU28='=IF(AS24=5,41,0)' | AV28='=IF(AS25=5,41,0)' | AW28='=IF(AS26=5,40,0)' | AX28='=IF(AS27=5,42,0)' | AY28='=IF(AS28=5,34,0)' | AZ28='=IF(AS29=5,47,0)'
+  B29='E21' | C29='X' | E29='=AH14' | F29='=IF(D29="X",1,0)' | I29='P21' | K29='X' | M29='=IF(K29="X",1,0)' | P29='H21' | R29='X' | T29='=IF(R29="X",1,0)' | AG29='INVESTIGATIVO' | AH29='=AK17' | AI29='=IF(AH23=6,40,0)' | AJ29='=IF(AH24=6,54,0)' | AK29='=IF(AH25=6,36,0)' | AL29='=IF(AH26=6,41,0)' | AM29='=IF(AH27=6,40,0)' | AN29='=IF(AH28=6,35,0)' | AO29='=IF(AH29=6,47,0)' | AR29='INVESTIGATIVO' | AS29='=AK17' | AT29='=IF(AS23=6,42,0)' | AU29='=IF(AS24=6,44,0)' | AV29='=IF(AS25=6,44,0)' | AW29='=IF(AS26=6,42,0)' | AX29='=IF(AS27=6,44,0)' | AY29='=IF(AS28=6,36,0)' | AZ29='=IF(AS29=6,50,0)'
+  B30='E22' | C30='X' | F30='=IF(D30="X",1,0)' | I30='P22' | K30='X' | M30='=IF(K30="X",1,0)' | P30='H22' | R30='X' | T30='=IF(R30="X",1,0)' | AI30='=IF(AH23=7,42,0)' | AJ30='=IF(AH24=7,57,0)' | AK30='=IF(AH25=7,40,0)' | AL30='=IF(AH26=7,43,0)' | AM30='=IF(AH27=7,43,0)' | AN30='=IF(AH28=7,37,0)' | AO30='=IF(AH29=7,50,0)' | AT30='=IF(AS23=7,44,0)' | AU30='=IF(AS24=7,47,0)' | AV30='=IF(AS25=7,47,0)' | AW30='=IF(AS26=7,44,0)' | AX30='=IF(AS27=7,47,0)' | AY30='=IF(AS28=7,38,0)' | AZ30='=IF(AS29=7,53,0)'
+  B31='E23' | C31='X' | F31='=IF(D31="X",1,0)' | I31='P23' | J31='X' | M31='=IF(K31="X",1,0)' | P31='H23' | R31='X' | T31='=IF(R31="X",1,0)' | AI31='=IF(AH23=8,44,0)' | AJ31='=IF(AH24=8,60,0)' | AK31='=IF(AH25=8,43,0)' | AL31='=IF(AH26=8,45,0)' | AM31='=IF(AH27=8,45,0)' | AN31='=IF(AH28=8,39,0)' | AO31='=IF(AH29=8,53,0)' | AT31='=IF(AS23=8,46,0)' | AU31='=IF(AS24=8,50,0)' | AV31='=IF(AS25=8,50,0)' | AW31='=IF(AS26=8,46,0)' | AX31='=IF(AS27=8,49,0)' | AY31='=IF(AS28=8,40,0)' | AZ31='=IF(AS29=8,56,0)'
+  B32='E24' | C32='X' | F32='=IF(D32="X",1,0)' | I32='P24' | K32='X' | L32='=AI14' | M32='=IF(K32="X",1,0)' | P32='H24' | R32='X' | S32='=AJ14' | T32='=IF(R32="X",1,0)' | AI32='=IF(AH23=9,46,0)' | AJ32='=IF(AH24=9,64,0)' | AK32='=IF(AH25=9,46,0)' | AL32='=IF(AH26=9,47,0)' | AM32='=IF(AH27=9,48,0)' | AN32='=IF(AH28=9,41,0)' | AO32='=IF(AH29=9,56,0)' | AT32='=IF(AS23=9,48,0)' | AU32='=IF(AS24=9,53,0)' | AV32='=IF(AS25=9,53,0)' | AW32='=IF(AS26=9,48,0)' | AX32='=IF(AS27=9,52,0)' | AY32='=IF(AS28=9,42,0)' | AZ32='=IF(AS29=9,59,0)'
+  B33='E25' | C33='X' | E33='=AH15' | F33='=IF(D33="X",1,0)' | I33='P25' | J33='X' | M33='=IF(K33="X",1,0)' | P33='H25' | Q33='X' | T33='=IF(R33="X",1,0)' | AI33='=IF(AH23=10,48,0)' | AJ33='=IF(AH24=10,67,0)' | AK33='=IF(AH25=10,49,0)' | AL33='=IF(AH26=10,49,0)' | AM33='=IF(AH27=10,50,0)' | AN33='=IF(AH28=10,43,0)' | AO33='=IF(AH29=10,59,0)' | AT33='=IF(AS23=10,50,0)' | AU33='=IF(AS24=10,55,0)' | AV33='=IF(AS25=10,55,0)' | AW33='=IF(AS26=10,50,0)' | AX33='=IF(AS27=10,54,0)' | AY33='=IF(AS28=10,44,0)' | AZ33='=IF(AS29=10,63,0)'
+  B34='E26' | D34='X' | F34='=IF(D34="X",1,0)' | I34='P26' | K34='X' | M34='=IF(K34="X",1,0)' | P34='H26' | Q34='X' | T34='=IF(R34="X",1,0)' | AI34='=IF(AH23=11,50,0)' | AJ34='=IF(AH24=11,70,0)' | AK34='=IF(AH25=11,52,0)' | AL34='=IF(AH26=11,51,0)' | AM34='=IF(AH27=11,53,0)' | AN34='=IF(AH28=11,46,0)' | AO34='=IF(AH29=11,62,0)' | AT34='=IF(AS23=11,52,0)' | AU34='=IF(AS24=11,58,0)' | AV34='=IF(AS25=11,58,0)' | AW34='=IF(AS26=11,52,0)' | AX34='=IF(AS27=11,57,0)' | AY34='=IF(AS28=11,47,0)' | AZ34='=IF(AS29=11,66,0)'
+  B35='E27' | D35='X' | F35='=IF(D35="X",1,0)' | I35='P27' | J35='X' | M35='=IF(K35="X",1,0)' | P35='H27' | Q35='X' | T35='=IF(R35="X",1,0)' | AI35='=IF(AH23=12,52,0)' | AJ35='=IF(AH24=12,73,0)' | AK35='=IF(AH25=12,55,0)' | AL35='=IF(AH26=12,53,0)' | AM35='=IF(AH27=12,56,0)' | AN35='=IF(AH28=12,48,0)' | AO35='=IF(AH29=12,65,0)' | AT35='=IF(AS23=12,54,0)' | AU35='=IF(AS24=12,61,0)' | AV35='=IF(AS25=12,61,0)' | AW35='=IF(AS26=12,54,0)' | AX35='=IF(AS27=12,60,0)' | AY35='=IF(AS28=12,49,0)' | AZ35='=IF(AS29=12,69,0)'
+  B36='E28' | D36='X' | F36='=IF(D36="X",1,0)' | I36='P28' | J36='X' | M36='=IF(K36="X",1,0)' | P36='H28' | Q36='X' | S36='=AJ15' | T36='=IF(R36="X",1,0)' | AI36='=IF(AH23=13,54,0)' | AJ36='=IF(AH24=13,77,0)' | AK36='=IF(AH25=13,59,0)' | AL36='=IF(AH26=13,55,0)' | AM36='=IF(AH27=13,58,0)' | AN36='=IF(AH28=13,50,0)' | AO36='=SUM(AO23:AO35)' | AT36='=IF(AS23=13,56,0)' | AU36='=IF(AS24=13,64,0)' | AV36='=IF(AS25=13,64,0)' | AW36='=IF(AS26=13,56,0)' | AX36='=IF(AS27=13,62,0)' | AY36='=IF(AS28=13,51,0)' | AZ36='=SUM(AZ23:AZ35)'
+  B37='E29' | C37='X' | F37='=IF(D37="X",1,0)' | I37='P29' | J37='X' | M37='=IF(K37="X",1,0)' | P37='H29' | Q37='X' | T37='=IF(R37="X",1,0)' | AI37='=IF(AH23=14,56,0)' | AJ37='=IF(AH24=14,80,0)' | AK37='=IF(AH25=14,62,0)' | AL37='=IF(AH26=14,57,0)' | AM37='=IF(AH27=14,61,0)' | AN37='=IF(AH28=14,52,0)' | AT37='=IF(AS23=14,58,0)' | AU37='=IF(AS24=14,67,0)' | AV37='=IF(AS25=14,67,0)' | AW37='=IF(AS26=14,58,0)' | AX37='=IF(AS27=14,65,0)' | AY37='=IF(AS28=14,53,0)'
+  B38='E30' | D38='X' | F38='=IF(D38="X",1,0)' | I38='P30' | K38='X' | M38='=IF(K38="X",1,0)' | P38='H30' | Q38='X' | T38='=IF(R38="X",1,0)' | AI38='=IF(AH23=15,58,0)' | AJ38='=SUM(AJ23:AJ37)' | AK38='=IF(AH25=15,65,0)' | AL38='=IF(AH26=15,59,0)' | AM38='=IF(AH27=15,63,0)' | AN38='=IF(AH28=15,54,0)' | AT38='=IF(AS23=15,60,0)' | AU38='=SUM(AU23:AU37)' | AV38='=IF(AS25=15,70,0)' | AW38='=IF(AS26=15,60,0)' | AX38='=IF(AS27=15,67,0)' | AY38='=IF(AS28=15,55,0)'
+  B39='E31' | D39='X' | F39='=IF(D39="X",1,0)' | I39='P31' | J39='X' | M39='=IF(K39="X",1,0)' | P39='H31' | Q39='X' | T39='=IF(R39="X",1,0)' | AI39='=IF(AH23=16,60,0)' | AK39='=SUM(AK23:AK38)' | AL39='=IF(AH26=16,61,0)' | AM39='=IF(AH27=16,66,0)' | AN39='=IF(AH28=16,56,0)' | AT39='=IF(AS23=16,62,0)' | AV39='=SUM(AV23:AV38)' | AW39='=IF(AS26=16,62,0)' | AX39='=IF(AS27=16,70,0)' | AY39='=IF(AS28=16,57,0)'
+  B40='E32' | D40='X' | F40='=IF(D40="X",1,0)' | I40='P32' | J40='X' | L40='=AI15' | M40='=IF(K40="X",1,0)' | P40='H32' | R40='X' | T40='=IF(R40="X",1,0)' | AI40='=IF(AH23=17,62,0)' | AL40='=IF(AH26=17,63,0)' | AM40='=SUM(AM23:AM39)' | AN40='=IF(AH28=17,58,0)' | AT40='=IF(AS23=17,64,0)' | AW40='=IF(AS26=17,64,0)' | AX40='=SUM(AX23:AX39)' | AY40='=IF(AS28=17,59,0)'
+  B41='E33' | D41='X' | E41='=AH16' | F41='=IF(D41="X",1,0)' | I41='P33' | J41='X' | M41='=IF(K41="X",1,0)' | P41='H33' | R41='X' | T41='=IF(R41="X",1,0)' | AI41='=IF(AH23=18,64,0)' | AL41='=IF(AH26=18,65,0)' | AN41='=IF(AH28=18,60,0)' | AT41='=IF(AS23=18,66,0)' | AW41='=IF(AS26=18,66,0)' | AY41='=IF(AS28=18,62,0)'
+  F42='=IF(D42="X",1,0)' | I42='P34' | J42='X' | M42='=IF(K42="X",1,0)' | P42='H34' | Q42='X' | S42='=AJ16' | T42='=IF(R42="X",1,0)' | AI42='=IF(AH23=19,66,0)' | AL42='=IF(AH26=19,67,0)' | AN42='=IF(AH28=19,62,0)' | AT42='=IF(AS23=19,68,0)' | AW42='=IF(AS26=19,68,0)' | AY42='=IF(AS28=19,64,0)'
+  F43='=IF(D43="X",1,0)' | I43='P35' | J43='X' | M43='=IF(K43="X",1,0)' | P43='H35' | Q43='X' | T43='=IF(R43="X",1,0)' | AI43='=IF(AH23=20,68,0)' | AL43='=IF(AH26=20,69,0)' | AN43='=IF(AH28=20,65,0)' | AT43='=IF(AS23=20,70,0)' | AW43='=IF(AS26=20,70,0)' | AY43='=IF(AS28=20,66,0)'
+  I44='P36' | J44='X' | M44='=IF(K44="X",1,0)' | P44='H36' | Q44='X' | T44='=IF(R44="X",1,0)' | AI44='=SUM(AI23:AI43)' | AL44='=IF(AH26=21,71,0)' | AN44='=IF(AH28=21,67,0)' | AT44='=SUM(AT23:AT43)' | AW44='=IF(AS26=21,72,0)' | AY44='=IF(AS28=21,68,0)'
+  I45='P37' | J45='X' | M45='=IF(K45="X",1,0)' | P45='H37' | Q45='X' | T45='=IF(R45="X",1,0)' | AL45='=SUM(AL23:AL44)' | AN45='=SUM(AN23:AN44)' | AW45='=SUM(AW23:AW44)' | AY45='=SUM(AY23:AY44)'
+  I46='P38' | J46='X' | M46='=IF(K46="X",1,0)' | P46='H38' | Q46='X' | S46='=AJ17' | T46='=IF(R46="X",1,0)'
+  I47='P39' | J47='X' | L47='=AI16' | M47='=IF(K47="X",1,0)' | T47='=IF(R47="X",1,0)'
+  I48='P40' | J48='X' | M48='=IF(K48="X",1,0)' | T48='=IF(R48="X",1,0)'
+  I49='P41' | J49='X' | M49='=IF(K49="X",1,0)'
+  I50='P42' | J50='X' | M50='=IF(K50="X",1,0)'
+  I51='P43' | J51='X' | M51='=IF(K51="X",1,0)'
+  I52='P44' | J52='X' | M52='=IF(K52="X",1,0)'
+  I53='P45' | J53='X' | M53='=IF(K53="X",1,0)'
+  I54='P46' | J54='X' | M54='=IF(K54="X",1,0)'
+  I55='P47' | J55='X' | L55='=AI17' | M55='=IF(K55="X",1,0)'
+  M56='=IF(K56="X",1,0)'
+  M57='=IF(K57="X",1,0)'
+  X66='LIDERAZGO' | Y66='TECNICO MECÁNICO' | Z66='SOCIAL' | AA66='ORGANIZADO' | AB66='ARTÍSTICO' | AC66='EMPRENDEDOR' | AD66='INVESTIGATIVO'
+  X68='=AL11' | Y68='=AL12' | Z68='=AL13' | AA68='=AL14' | AB68='=AL15' | AC68='=AL16' | AD68='=AL17'
+
+#### Hoja: Hoja1  (dims: B4:B9)
+  Estado: visible
+  B4='Estimación de la probabilidad de éxito de crear y gestionar un negocio propio. Dicha estimación parte de comparar el perfil de los evaluados con respecto al perfil del empresario exitoso de la pequeña y micro empresa.'
+  B5='Estimación de la probabilidad media de crear y gestionar un negocio propio. Dicha estimación parte de comparar el perfil de los evaluados con respecto al perfil del empresario exitoso de la pequeña y micro empresa.'
+  B6='La probabilidad de crear y gestionar un negocio propio es bajo, ya que el perfil del candidato no se asemeja al del pequeño empresario urbano exitoso, la posibilidad de crear un negocio y de hacerlo es muy baja.'
+  B8='OBSERVACION (no realizo toda la prueba): el estudiante no realizo el llenado de la evaluación de orientación vocacional por ende se le sugiere volver a realizar la prueba.'
+  B9='Observación (si no lleno una fila): el estudiante no completo toda la prueba por ende el resultado será inválido y se le recomienda volver a realizar la evaluación.'
+
+## 4. VALORES CALCULADOS (hojas clave)
+
+#### INFORME (solo valores)
+  T4='>Potencial empresarial En Desarrollo'
+  T5='Estimación de la probabilidad media de crear y gestionar un negocio propio. Dicha estimación parte de comparar el perfil de los evaluados con respecto al perfil del empresario exitoso de la pequeña y micro empresa.'
+  B7='Nombre del evaluado(a):' | G7='KON LEO FLORES MEN'
+  F8=' '
+  B9='DNI:' | G9='Fecha de eval:' | H9=datetime.datetime(2026, 4, 30, 0, 0) | K9='  Edad:' | L9=15 | N9='Género:' | P9='M'
+  B11='Grado de instruc:' | D11='4°' | G11='SECUNDARIA INCOMPLETA' | I11='II.EE' | L11='JULIO CESAR BENAVENTE DIAZ'
+  B12='Evaluador(a):' | E12='|' | U12='N°' | V12='Área' | W12='Baremo' | X12='Nivel de la habilidad'
+  U13=1 | V13='Atención' | W13=19 | X13='X' | Y13=' ' | Z13=' '
+  U14=2 | V14='Habilidad Numérica' | W14=34 | X14='X' | Y14=' ' | Z14=' '
+  U15=3 | V15='Razonamiento' | W15=2 | X15='X' | Y15=' ' | Z15=' '
+  U16=4 | V16='Vocabulario' | W16=13 | X16='X' | Y16=' ' | Z16=' '
+  U17=5 | V17='Espacial' | W17=30 | X17='X' | Y17=' ' | Z17=' '
+  U19='˃ Tipificación vocacional (Estilo personal y preferencia ocupacional)'
+  U20='N°' | V20='Tipos vocacionales' | W20='Baremo' | X20='Nivel de correspondencia'
+  X21='bajo' | Y21='medio' | Z21='alto'
+  U22=1 | V22='Liderazgo' | W22=42 | X22='X'
+  U23=2 | V23='Técnico-Mecánico' | W23=50 | X23='X'
+  U24=3 | V24='Social' | W24=44 | X24='X'
+  U25=4 | V25='Organizado' | W25=52 | Y25='X'
+  U26=5 | V26='Artístico' | W26=34 | X26='X'
+  U27=6 | V27='Empredimiento' | W27=42 | Y27='X'
+  U28=7 | V28='Investigación' | W28=31 | X28='X'
+  U30='˃ Potencial Empresarial'
+  U31='POTENCIAL EMPRESARIAL EN DESARROLLO' | AA31=' '
+  U34='˃ Observaciones:'
+  U39='De acuerdo a los resultados obtenidos podemos mencionar que el alumno puede desarrollar sus habilidades dentro de los tipos INVESTIGACION Y ORGANIZADO dentro de las carreras opcionales como primera opción SOCIOLOGIA Y GUIA OFICIAL DE TURISMO.'
+  V44='                    '
+  B46='Servicio de Orientación Vocacional e Información Ocupacional -' | M46='GRTPE CUSCO'
+  B47='Dirección:'
+  B48='Teléfono:' | I48='E-Mail'
+
+#### IEPPO (solo valores)
+  B2='INVENTARIO DE ESTILOS PERSONALES Y PREFERENCIAS OCUPACIONALES - IEPPO'
+  B4='SEXO' | D4='M' | I4='M= masculino'
+  I5='F = femenino'
+  B7='ESTILOS PERSONALES' | I7='ACTIVIDADES DE PREFERENCIA' | P7='PERCEPCIÓN DE  HABILIDAD' | X7='TIPO VOCACIONAL' | Y7='SUMA ESTILOS PERSONALES' | Z7='SUMA ACTIVIDADES PREFERENCIAS' | AA7='SUMA PERCEPCIÓN DE HABILIDADES' | AB7='SUMA TOTAL' | AC7='BAREMOS FINAL'
+  C8='NO SE PARECE A MI' | D8='SI SE PARECE A MI' | J8='NO ME INTERESA' | K8='SI  ME INTERESA' | Q8='NO SOY HABIL' | R8='SI SOY HABIL'
+  B9='E1' | D9='X' | F9=1 | I9='P1' | J9='X' | M9=0 | P9='H1' | Q9='X' | T9=0 | X9='LIDERAZGO' | Y9=3 | Z9=0 | AA9=3 | AB9=6 | AC9=42 | AG9='TIPO VOCACIONAL' | AH9='SUMA ESTILOS PERSONALES' | AI9='SUMA ACTIVIDADES PREFERENCIAS' | AJ9='SUMA PERCEPCION DE HABILIDADES' | AK9='SUMA TOTAL' | AL9='BAREMOS FINAL'
+  B10='E2' | C10='X' | F10=0 | I10='P2' | J10='X' | M10=0 | P10='H2' | Q10='X' | T10=0
+  B11='E3' | D11='X' | F11=1 | I11='P3' | J11='X' | M11=0 | P11='H3' | R11='X' | T11=1 | X11='TÉCNICO MECÁNICO' | Y11=3 | Z11=3 | AA11=2 | AB11=8 | AC11=50 | AG11='LIDERAZGO' | AH11=3 | AI11=0 | AJ11=3 | AK11=6 | AL11=42
+  B12='E4' | D12='X' | F12=0 | I12='P4' | J12='X' | M12=0 | P12='H4' | R12='X' | T12=1 | AG12='TECNICO MECANICO' | AH12=3 | AI12=3 | AJ12=2 | AK12=8 | AL12=50
+  B13='E5' | D13='X' | F13=1 | I13='P5' | J13='X' | M13=0 | P13='H5' | R13='X' | T13=1 | X13='SOCIAL' | Y13=5 | Z13=1 | AA13=0 | AB13=6 | AC13=44 | AG13='SOCIAL' | AH13=5 | AI13=1 | AJ13=0 | AK13=6 | AL13=44
+  B14='E6' | C14='X' | E14=3 | F14=0 | I14='P6' | J14='X' | L14=0 | M14=0 | P14='H6' | Q14='X' | T14=0 | AG14='ORGANIZADO' | AH14=1 | AI14=5 | AJ14=5 | AK14=11 | AL14=52
+  B15='E7' | D15='X' | F15=1 | I15='P7' | J15='X' | M15=0 | P15='H7' | Q15='X' | T15=0 | X15='ORGANIZADO' | Y15=1 | Z15=5 | AA15=5 | AB15=11 | AC15=52 | AG15='ARTISTICO' | AH15=0 | AI15=2 | AJ15=0 | AK15=2 | AL15=34
+  B16='E8' | D16='X' | F16=1 | I16='P8' | K16='X' | M16=1 | P16='H8' | Q16='X' | S16=3 | T16=0 | AG16='AMPRENDEDOR' | AH16=7 | AI16=0 | AJ16=2 | AK16=9 | AL16=42
+  B17='E9' | C17='X' | F17=0 | I17='P9' | K17='X' | M17=1 | P17='H9' | Q17='X' | T17=0 | X17='ARTÍSTICO' | Y17=0 | Z17=2 | AA17=0 | AB17=2 | AC17=34 | AG17='INVESTIGATIVO' | AH17='--' | AI17=0 | AJ17=0 | AK17=0 | AL17=31
+  B18='E10' | D18='X' | E18=3 | F18=1 | I18='P10' | K18='X' | M18=1 | P18='H10' | R18='X' | T18=1 | AJ18=' '
+  B19='E11' | D19='X' | F19=1 | I19='P11' | J19='X' | L19=3 | M19=0 | P19='H11' | R19='X' | T19=1 | X19='EMPRENDEDOR' | Y19=7 | Z19=0 | AA19=2 | AB19=9 | AC19=42
+  B20='E12' | D20='X' | F20=1 | I20='P12' | J20='X' | M20=0 | P20='H12' | Q20='X' | T20=0 | AG20='MUJERES' | AI20='LIDERAZGO' | AJ20='TECNICO-MECANICO' | AK20='SOCIAL' | AL20='ORGANIZADO' | AM20='ARTISTICO' | AN20='EMPRENDIMINETO' | AO20='INVESTIGATIVO' | AR20='VARONES' | AT20='LIDERAZGO' | AU20='TECNICO-MECANICO' | AV20='SOCIAL' | AW20='ORGANIZADO' | AX20='ARTISTICO' | AY20='EMPRENDIMINETO' | AZ20='INVESTIGATIVO'
+  B21='E13' | D21='X' | F21=1 | I21='P13' | J21='X' | M21=0 | P21='H13' | Q21='X' | S21=2 | T21=0 | X21='INVESTIGATIVO' | Y21='----' | Z21=0 | AA21=0 | AB21=0 | AC21=31 | AG21='TIPO VOCACIONAL' | AH21='SUMA TOTAL' | AR21='TIPO VOCACIONAL' | AS21='SUMA TOTAL'
+  B22='E14' | D22='X' | F22=1 | I22='P14' | J22='X' | M22=0 | P22='H14' | Q22='X' | T22=0
+  B23='E15' | D23='X' | E23=5 | F23=1 | I23='P15' | J23='X' | M23=0 | P23='H15' | Q23='X' | T23=0 | AG23='LIDERAZGO' | AH23=6 | AI23=0 | AJ23=0 | AK23=0 | AL23=0 | AM23=0 | AN23=0 | AO23=28 | AR23='LIDERAZGO' | AS23=6 | AT23=0 | AU23=0 | AV23=0 | AW23=0 | AX23=0 | AY23=0 | AZ23=31
+  B24='E16' | C24='X' | F24=0 | I24='P16' | J24='X' | M24=0 | P24='H16' | Q24='X' | T24=0 | AG24='TECNICO MECANICO' | AH24=8 | AI24=0 | AJ24=0 | AK24=0 | AL24=0 | AM24=0 | AN24=0 | AO24=0 | AR24='TECNICO MECANICO' | AS24=8 | AT24=0 | AU24=0 | AV24=0 | AW24=0 | AX24=0 | AY24=0 | AZ24=0
+  B25='E17' | C25='X' | F25=0 | I25='P17' | K25='X' | L25=1 | M25=1 | P25='H17' | Q25='X' | S25=0 | T25=0 | V25='                                                                                                                                                                                                                                                                                                            …' | AG25='SOCIAL' | AH25=6 | AI25=0 | AJ25=0 | AK25=0 | AL25=0 | AM25=30 | AN25=0 | AO25=0 | AR25='SOCIAL' | AS25=6 | AT25=0 | AU25=0 | AV25=0 | AW25=0 | AX25=34 | AY25=0 | AZ25=0
+  B26='E18' | D26='X' | F26=1 | I26='P18' | J26='X' | M26=0 | P26='H18' | Q26='X' | T26=0 | AG26='ORGANIZADO' | AH26=11 | AI26=0 | AJ26=0 | AK26=0 | AL26=0 | AM26=0 | AN26=0 | AO26=0 | AR26='ORGANIZADO' | AS26=11 | AT26=0 | AU26=0 | AV26=0 | AW26=0 | AX26=0 | AY26=0 | AZ26=0
+  B27='E19' | C27='X' | F27=0 | I27='P19' | K27='X' | M27=1 | P27='H19' | R27='X' | T27=1 | AG27='ARTISTICO' | AH27=2 | AI27=0 | AJ27=0 | AK27=0 | AL27=0 | AM27=0 | AN27=0 | AO27=0 | AR27='ARTISTICO' | AS27=2 | AT27=0 | AU27=0 | AV27=0 | AW27=0 | AX27=0 | AY27=0 | AZ27=0
+  B28='E20' | C28='X' | F28=0 | I28='P20' | K28='X' | M28=1 | P28='H20' | Q28='X' | T28=0 | AG28='AMPRENDEDOR' | AH28=9 | AI28=0 | AJ28=0 | AK28=0 | AL28=0 | AM28=0 | AN28=0 | AO28=0 | AR28='AMPRENDEDOR' | AS28=9 | AT28=0 | AU28=0 | AV28=0 | AW28=0 | AX28=0 | AY28=0 | AZ28=0
+  B29='E21' | C29='X' | E29=1 | F29=0 | I29='P21' | K29='X' | M29=1 | P29='H21' | R29='X' | T29=1 | AG29='INVESTIGATIVO' | AH29=0 | AI29=40 | AJ29=0 | AK29=36 | AL29=0 | AM29=0 | AN29=0 | AO29=0 | AR29='INVESTIGATIVO' | AS29=0 | AT29=42 | AU29=0 | AV29=44 | AW29=0 | AX29=0 | AY29=0 | AZ29=0
+  B30='E22' | C30='X' | F30=0 | I30='P22' | K30='X' | M30=1 | P30='H22' | R30='X' | T30=1 | AI30=0 | AJ30=0 | AK30=0 | AL30=0 | AM30=0 | AN30=0 | AO30=0 | AT30=0 | AU30=0 | AV30=0 | AW30=0 | AX30=0 | AY30=0 | AZ30=0
+  B31='E23' | C31='X' | F31=0 | I31='P23' | J31='X' | M31=0 | P31='H23' | R31='X' | T31=1 | AI31=0 | AJ31=60 | AK31=0 | AL31=0 | AM31=0 | AN31=0 | AO31=0 | AT31=0 | AU31=50 | AV31=0 | AW31=0 | AX31=0 | AY31=0 | AZ31=0
+  B32='E24' | C32='X' | F32=0 | I32='P24' | K32='X' | L32=5 | M32=1 | P32='H24' | R32='X' | S32=5 | T32=1 | AI32=0 | AJ32=0 | AK32=0 | AL32=0 | AM32=0 | AN32=41 | AO32=0 | AT32=0 | AU32=0 | AV32=0 | AW32=0 | AX32=0 | AY32=42 | AZ32=0
+  B33='E25' | C33='X' | E33=0 | F33=0 | I33='P25' | J33='X' | M33=0 | P33='H25' | Q33='X' | T33=0 | AI33=0 | AJ33=0 | AK33=0 | AL33=0 | AM33=0 | AN33=0 | AO33=0 | AT33=0 | AU33=0 | AV33=0 | AW33=0 | AX33=0 | AY33=0 | AZ33=0
+  B34='E26' | D34='X' | F34=1 | I34='P26' | K34='X' | M34=1 | P34='H26' | Q34='X' | T34=0 | AI34=0 | AJ34=0 | AK34=0 | AL34=51 | AM34=0 | AN34=0 | AO34=0 | AT34=0 | AU34=0 | AV34=0 | AW34=52 | AX34=0 | AY34=0 | AZ34=0
+  B35='E27' | D35='X' | F35=1 | I35='P27' | J35='X' | M35=0 | P35='H27' | Q35='X' | T35=0 | AI35=0 | AJ35=0 | AK35=0 | AL35=0 | AM35=0 | AN35=0 | AO35=0 | AT35=0 | AU35=0 | AV35=0 | AW35=0 | AX35=0 | AY35=0 | AZ35=0
+  B36='E28' | D36='X' | F36=1 | I36='P28' | J36='X' | M36=0 | P36='H28' | Q36='X' | S36=0 | T36=0 | AI36=0 | AJ36=0 | AK36=0 | AL36=0 | AM36=0 | AN36=0 | AO36=28 | AT36=0 | AU36=0 | AV36=0 | AW36=0 | AX36=0 | AY36=0 | AZ36=31
+  B37='E29' | C37='X' | F37=0 | I37='P29' | J37='X' | M37=0 | P37='H29' | Q37='X' | T37=0 | AI37=0 | AJ37=0 | AK37=0 | AL37=0 | AM37=0 | AN37=0 | AT37=0 | AU37=0 | AV37=0 | AW37=0 | AX37=0 | AY37=0
+  B38='E30' | D38='X' | F38=1 | I38='P30' | K38='X' | M38=1 | P38='H30' | Q38='X' | T38=0 | AI38=0 | AJ38=60 | AK38=0 | AL38=0 | AM38=0 | AN38=0 | AT38=0 | AU38=50 | AV38=0 | AW38=0 | AX38=0 | AY38=0
+  B39='E31' | D39='X' | F39=1 | I39='P31' | J39='X' | M39=0 | P39='H31' | Q39='X' | T39=0 | AI39=0 | AK39=36 | AL39=0 | AM39=0 | AN39=0 | AT39=0 | AV39=44 | AW39=0 | AX39=0 | AY39=0
+  B40='E32' | D40='X' | F40=1 | I40='P32' | J40='X' | L40=2 | M40=0 | P40='H32' | R40='X' | T40=1 | AI40=0 | AL40=0 | AM40=30 | AN40=0 | AT40=0 | AW40=0 | AX40=34 | AY40=0
+  B41='E33' | D41='X' | E41=7 | F41=1 | I41='P33' | J41='X' | M41=0 | P41='H33' | R41='X' | T41=1 | AI41=0 | AL41=0 | AN41=0 | AT41=0 | AW41=0 | AY41=0
+  F42=0 | I42='P34' | J42='X' | M42=0 | P42='H34' | Q42='X' | S42=2 | T42=0 | AI42=0 | AL42=0 | AN42=0 | AT42=0 | AW42=0 | AY42=0
+  F43=0 | I43='P35' | J43='X' | M43=0 | P43='H35' | Q43='X' | T43=0 | AI43=0 | AL43=0 | AN43=0 | AT43=0 | AW43=0 | AY43=0
+  I44='P36' | J44='X' | M44=0 | P44='H36' | Q44='X' | T44=0 | AI44=40 | AL44=0 | AN44=0 | AT44=42 | AW44=0 | AY44=0
+  I45='P37' | J45='X' | M45=0 | P45='H37' | Q45='X' | T45=0 | AL45=51 | AN45=41 | AW45=52 | AY45=42
+  I46='P38' | J46='X' | M46=0 | P46='H38' | Q46='X' | S46=0 | T46=0
+  I47='P39' | J47='X' | L47=0 | M47=0 | T47=0
+  I48='P40' | J48='X' | M48=0 | T48=0
+  I49='P41' | J49='X' | M49=0
+  I50='P42' | J50='X' | M50=0
+  I51='P43' | J51='X' | M51=0
+  I52='P44' | J52='X' | M52=0
+  I53='P45' | J53='X' | M53=0
+  I54='P46' | J54='X' | M54=0
+  I55='P47' | J55='X' | L55=0 | M55=0
+  M56=0
+  M57=0
+  X66='LIDERAZGO' | Y66='TECNICO MECÁNICO' | Z66='SOCIAL' | AA66='ORGANIZADO' | AB66='ARTÍSTICO' | AC66='EMPRENDEDOR' | AD66='INVESTIGATIVO'
+  X68=42 | Y68=50 | Z68=44 | AA68=52 | AB68=34 | AC68=42 | AD68=31
+
+#### Hoja1 (solo valores)
+  B4='Estimación de la probabilidad de éxito de crear y gestionar un negocio propio. Dicha estimación parte de comparar el perfil de los evaluados con respecto al perfil del empresario exitoso de la pequeña y micro empresa.'
+  B5='Estimación de la probabilidad media de crear y gestionar un negocio propio. Dicha estimación parte de comparar el perfil de los evaluados con respecto al perfil del empresario exitoso de la pequeña y micro empresa.'
+  B6='La probabilidad de crear y gestionar un negocio propio es bajo, ya que el perfil del candidato no se asemeja al del pequeño empresario urbano exitoso, la posibilidad de crear un negocio y de hacerlo es muy baja.'
+  B8='OBSERVACION (no realizo toda la prueba): el estudiante no realizo el llenado de la evaluación de orientación vocacional por ende se le sugiere volver a realizar la prueba.'
+  B9='Observación (si no lleno una fila): el estudiante no completo toda la prueba por ende el resultado será inválido y se le recomienda volver a realizar la evaluación.'
+
+## 5. OTRAS HOJAS (primeras 40 filas)
+
+#### Hoja: PHB  (dims: A2:CJ367)
+  Estado: hidden
+  J2='PRUEBA DE HABILIDADES BASICAS - PHB'
+  B4='ATENCIÓN' | F4='PD' | G4='baremos' | J4='HABILIDAD NUMÉRICA ' | N4='PD' | O4='baremos' | R4='RAZONAMIENTO' | AA4='VOCABULARIO' | AI4='HABILIDAD ESPACIAL' | AM4='RESPUESTAS' | AN4='CORRECCION'
+  F5='correccion' | N5='correccion' | V5='RESPUESTAS' | W5='TOTAL' | X5='baremos' | AD5='RESPUESTAS' | AE5='baremos'
+  B6='A1' | F6='=IF(C6=3,1,0)' | G6='=IF(F20=0,19,0)' | J6='N1' | N6='=IF(K6=20,1,0)' | O6='=IF(N15=0,34,0)' | R6='R1' | V6='=IF(S6="D",1, 0)' | W6='=SUM(T6:V6)' | X6='=IF(W17=0,2,0)' | AA6='V1' | AD6='=IF(AB6="C",1, 0)' | AE6='=IF(AD38=0,13,0)' | AH6='CONTEO DE CUBOS' | AI6='ES1' | AM6=15 | AN6='=IF(AJ6=15,1,0)'
+  B7='A2' | F7='=IF(C7=3,1,0)' | G7='=IF(F20=1,22,0)' | J7='N2' | N7='=IF(K7=168,1,0)' | O7='=IF(N15=1,38,0)' | R7='R2' | V7='=IF(S7="D",1, 0)' | W7='=SUM(T7:V7)' | X7='=IF(W17=1,7,0)' | AA7='V2' | AD7='=IF(AB7="C",1, 0)' | AE7='=IF(AD38=1,15,0)' | AI7='ES2' | AM7=18 | AN7='=IF(AJ7=18,1,0)'
+  B8='A3' | F8='=IF(C8=3,1,0)' | G8='=IF(F20=2,25,0)' | J8='N3' | N8='=IF(K8=40,1,0)' | O8='=IF(N15=2,43,0)' | R8='R3' | V8='=IF(S8="C",1, 0)' | W8='=SUM(T8:V8)' | X8='=IF(W17=2,13,0)' | AA8='V3' | AD8='=IF(AB8="A",1, 0)' | AE8='=IF(AD38=2,16,0)' | AI8='ES3' | AM8=12 | AN8='=IF(AJ8=12,1,0)'
+  B9='A4' | F9='=IF(C9=3,1,0)' | G9='=IF(F20=3,28,0)' | J9='N4' | N9='=IF(K9=375,1,0)' | O9='=IF(N15=3,47,0)' | R9='R4' | V9='=IF(S9="B",1, 0)' | W9='=SUM(T9:V9)' | X9='=IF(W17=3,19,0)' | AA9='V4' | AD9='=IF(AB9="B",1, 0)' | AE9='=IF(AD38=3,18,0)' | AI9='ES4' | AM9=15 | AN9='=IF(AJ9=15,1,0)'
+  B10='A5' | F10='=IF(C10=3,1,0)' | G10='=IF(F20=4,31,0)' | J10='N5' | N10='=IF(K10=18,1,0)' | O10='=IF(N15=4,51,0)' | R10='R5' | V10='=IF(S10="C",1, 0)' | W10='=SUM(T10:V10)' | X10='=IF(W17=4,24,0)' | AA10='V5' | AD10='=IF(AB10="C",1, 0)' | AE10='=IF(AD38=4,20,0)' | AI10='ES5' | AM10=27 | AN10='=IF(AJ10=27,1,0)'
+  B11='A6' | F11='=IF(C11=3,1,0)' | G11='=IF(F20=5,34,0)' | J11='N6' | N11='=IF(K11=10,1,0)' | O11='=IF(N15=5,55,0)' | R11='R6' | V11='=IF(S11="E",1, 0)' | W11='=SUM(T11:V11)' | X11='=IF(W17=5,30,0)' | AA11='V6' | AD11='=IF(AB11="C",1, 0)' | AE11='=IF(AD38=5,21,0)' | AI11='ES6' | AM11=22 | AN11='=IF(AJ11=22,1,0)'
+  B12='A7' | F12='=IF(C12=3,1,0)' | G12='=IF(F20=6,37,0)' | J12='N7' | N12='=IF(K12=3,1,0)' | O12='=IF(N15=6,59,0)' | R12='R7' | V12='=IF(S12="D",1, 0)' | W12='=SUM(T12:V12)' | X12='=IF(W17=6,36,0)' | AA12='V7' | AD12='=IF(AB12="C",1, 0)' | AE12='=IF(AD38=6,23,0)' | AI12='ES7' | AM12=40 | AN12='=IF(AJ12=40,1,0)'
+  B13='A8' | F13='=IF(C13=3,1,0)' | G13='=IF(F20=7,40,0)' | J13='N8' | N13='=IF(K13=85,1,0)' | O13='=IF(N15=7,63,0)' | R13='R8' | V13='=IF(S13="B",1, 0)' | W13='=SUM(T13:V13)' | X13='=IF(W17=7,41,0)' | AA13='V8' | AD13='=IF(AB13="D",1, 0)' | AE13='=IF(AD38=7,25,0)' | AI13='ES8' | AK13='S1' | AM13=19 | AN13='=IF(AJ13=19,1,0)'
+  B14='A9' | F14='=IF(C14=3,1,0)' | G14='=IF(F20=8,43,0)' | J14='N9' | N14='=IF(K14=60,1,0)' | O14='=IF(N15=8,67,0)' | R14='R9' | V14='=IF(S14="B",1, 0)' | W14='=SUM(T14:V14)' | X14='=IF(W17=8,47,0)' | AA14='V9' | AD14='=IF(AB14="C",1, 0)' | AE14='=IF(AD38=8,26,0)' | AI14='ES9' | AK14='=AN15' | AM14=20 | AN14='=IF(AJ14=20,1,0)'
+  B15='A10' | F15='=IF(C15=5,1,0)' | G15='=IF(F20=9,46,0)' | J15='PUNTAJE  DIRECTO TOTAL' | K15='=N15' | N15='=SUM(N6:N14)' | O15='=IF(N15>=9,71,0)' | R15='R10' | V15='=IF(S15="D",1, 0)' | W15='=SUM(T15:V15)' | X15='=IF(W17=9,53,0)' | AA15='V10' | AD15='=IF(AB15="A",1, 0)' | AE15='=IF(AD38=9,28,0)' | AN15='=SUM(AN6:AN14)'
+  B16='A11' | F16='=IF(C16=3,1,0)' | G16='=IF(F20=10,49,0)' | O16='=SUM(O6:O15)' | R16='R11' | V16='=IF(S16="A",1, 0)' | W16='=SUM(T16:V16)' | X16='=IF(W17=10,58,0)' | AA16='V11' | AD16='=IF(AB16="D",1, 0)' | AE16='=IF(AD38=10,30,0)' | AH16='PAPEL DOBLADO' | AI16='ES10' | AM16='A' | AN16='=IF(AJ16="A",1,0)'
+  B17='A12' | F17='=IF(C17=3,1,0)' | G17='=IF(F20=11,52,0)' | R17='PUNTAJE DIRECTO TOTAL' | S17='=W17' | W17='=SUM(W6:W16)' | X17='=IF(W17>=11,64,0)' | AA17='V12' | AD17='=IF(AB17="D",1, 0)' | AE17='=IF(AD38=11,31,0)' | AI17='ES11' | AM17='B' | AN17='=IF(AJ17="B",1,0)'
+  B18='A13' | F18='=IF(C18=6,1,0)' | G18='=IF(F20=12,55,0)' | X18='=SUM(X6:X17)' | AA18='V13' | AD18='=IF(AB18="B",1, 0)' | AE18='=IF(AD38=12,33,0)' | AI18='ES12' | AK18='S2' | AM18='D' | AN18='=IF(AJ18="D",1,0)'
+  B19='A14' | F19='=IF(C19=5,1,0)' | G19='=IF(F20=13,57,0)' | AA19='V14' | AD19='=IF(AB19="A",1, 0)' | AE19='=IF(AD38=13,35,0)' | AI19='ES13' | AK19='=AN20' | AM19='D' | AN19='=IF(AJ19="D",1,0)'
+  B20='PUNTAJE DIRECTO TOTAL' | C20='=F20' | F20='=SUM(F6:F19)' | G20='=IF(F20>=14,60,0)' | AA20='V15' | AD20='=IF(AB20="B",1, 0)' | AE20='=IF(AD38=14,37,0)' | AN20='=SUM(AN16:AN19)'
+  G21='=SUM(G6:G20)' | AA21='V16' | AD21='=IF(AB21="B",1, 0)' | AE21='=IF(AD38=15,38,0)' | AH21='ARMADO DE FORMAS SOLIDAS' | AI21='ES14' | AM21='D' | AN21='=IF(AJ21="D",1,0)'
+  AA22='V17' | AD22='=IF(AB22="C",1, 0)' | AE22='=IF(AD38=16,40,0)' | AI22='ES15' | AM22='A' | AN22='=IF(AJ22="A",1,0)'
+  AA23='V18' | AD23='=IF(AB23="A",1, 0)' | AE23='=IF(AD38=17,42,0)' | AI23='ES16' | AK23='S3' | AM23='C' | AN23='=IF(AJ23="C",1,0)'
+  AA24='V19' | AD24='=IF(AB24="D",1, 0)' | AE24='=IF(AD38=18,43,0)' | AI24='ES17' | AK24='=AN25' | AM24='C' | AN24='=IF(AJ24="C",1,0)'
+  AA25='V20' | AD25='=IF(AB25="A",1, 0)' | AE25='=IF(AD38=19,45,0)' | AN25='=SUM(AN21:AN24)'
+  AA26='V21' | AD26='=IF(AB26="B",1, 0)' | AE26='=IF(AD38=20,47,0)' | AI26='PUNTAJE  DIRECTO TOTAL' | AJ26='=AN27'
+  AA27='V22' | AD27='=IF(AB27="C",1, 0)' | AE27='=IF(AD38=21,48,0)' | AM27='TOTAL' | AN27='=SUM(AN15+AN20+AN25)'
+  AA28='V23' | AD28='=IF(AB28="A",1, 0)' | AE28='=IF(AD38=22,50,0)'
+  AA29='V24' | AD29='=IF(AB29="B",1, 0)' | AE29='=IF(AD38=23,52,0)'
+  AA30='V25' | AD30='=IF(AB30="B",1, 0)' | AE30='=IF(AD38=24,53,0)'
+  AA31='V26' | AD31='=IF(AB31="B",1, 0)' | AE31='=IF(AD38=25,55,0)'
+  AA32='V27' | AD32='=IF(AB32="C",1, 0)' | AE32='=IF(AD38=26,57,0)'
+  AA33='V28' | AD33='=IF(AB33="B",1, 0)' | AE33='=IF(AD38=27,59,0)'
+  AA34='V29' | AD34='=IF(AB34="B",1, 0)' | AE34='=IF(AD38=28,60,0)'
+  AA35='V30' | AD35='=IF(AB35="C",1, 0)' | AE35='=IF(AD38=29,62,0)'
+  AA36='V31' | AD36='=IF(AB36="C",1, 0)' | AE36='=IF(AD38=30,64,0)'
+  AA37='V32' | AD37='=IF(AB37="D",1, 0)' | AE37='=IF(AD38=31,65,0)'
+  AA38='PUNTAJE DIRECTO TOTAL' | AB38='=AD38' | AD38='=SUM(AD6:AD37)' | AE38='=IF(AD38>=32,67,0)'
+  AE39='=SUM(AE6:AE38)'
+
+#### Gráfico1 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico2 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico4 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico5 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico6 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico7 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico8 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico9 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico10 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico11 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico12 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico13 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico14 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico15 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico16 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico17 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico18 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico19 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico20 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico21 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico3 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico22 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico23 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Hoja: TEPE  (dims: A2:IV5607)
+  Estado: visible
+  B2='TEST DE EVALUACION DEL POTENCIAL EMPRESARIAL - TEPE'
+  B4='SECCION N° 1' | K4='SECCION N° 2'
+  B5='Razgos' | K5='Afirmaciones' | AC5='POTENCIAL EMPRESARIAL MUY ELEVADO (64  - 68 puntos)'
+  B6=1 | F6=12 | H6='=IF(G6="X",2,0)' | I6='=IF(G6="x",2,0)' | K6=22 | P6=61 | S6='=IF(Q6="x",2,0)' | V6='=IF(L6="x",2,0)' | W6='=IF(Q6="x",2,0)'
+  B7=2 | F7=13 | K7=23 | P7=62 | S7='=IF(R7="x",2,0)' | W7='=IF(R7="x",2,0)' | Y7='PUNTAJE TOTAL' | AC7='El perfil del candidato es similar al del pequeño empresario urbano exitoso. La probabilidad de crear un negocio y de hacerlo crecer es muy elevada.'
+  B8=3 | F8=14 | K8=24 | P8=63 | V8='=IF(M8="x",2,0)'
+  B9=4 | F9=15 | H9='=IF(G9="X",2,0)' | I9='=IF(G9="x",2,0)' | K9=25 | P9=64 | Y9='=J51'
+  B10=5 | F10=16 | K10=26 | P10=65 | S10='=IF(Q10="x",2,0)' | V10='=IF(L10="x",2,0)' | W10='=IF(Q10="x",2,0)'
+  B11=6 | F11=17 | K11=27 | P11=66
+  B12=7 | F12=18 | K12=28 | P12=67 | V12='=IF(L12="x",2,0)' | Y12='RESULTADO' | AC12='POTENCIAL EMPRESARIAL ELEVADO (60 - 63 puntos)'
+  B13=8 | D13='=IF(C13="x",2,0)' | F13=19 | I13='=IF(C13="x",2,0)' | K13=29 | P13=68
+  B14=9 | F14=20 | H14='=IF(G14="X",2,0)' | I14='=IF(G14="x",2,0)' | K14=30 | P14=69 | Y14='=IF(Y9>=64,"POTENCIAL EMPRESARIAL MUY ELEVADO",(IF(Y9>=60, "POTENCIAL EMPRESARIAL ELEVADA", IF(Y9>50,"POTENCIAL EMPRESARIAL POR DESARROLLAR","POTENCIAL EMPRESARIAL POR DESARROLLAR"))))' | AC14='El perfil del candidato es bastante similar al del pequeño empresario urbano exitoso. La probabilidad de crear un negocio y de hacerlo crecer es elevada.'
+  B15=10 | F15=21 | K15=31 | P15=70 | S15='=IF(Q15="x",2,0)' | W15='=IF(Q15="x",2,0)'
+  B16=11 | I16='=SUM(I6+I9+I13+I14)' | K16=32 | P16=71 | V16='=IF(L16="x",2,0)'
+  D17='=SUM(D6:D16)' | H17='=SUM(H6:H16)' | K17=33 | P17=72 | S17='=IF(Q17="x",2,0)' | W17='=IF(Q17="x",2,0)'
+  K18=34 | P18=73 | S18='=IF(Q18="x",2,0)' | V18='=IF(M18="x",2,0)' | W18='=IF(Q18="x",2,0)'
+  K19=35 | P19=74
+  K20=36 | P20=75 | AC20='POTENCIAL EMPRESARIAL POR DESARROLLAR' | AD20='POTENCIAL EMPRESARIAL RELATIVO (51-59 puntos)'
+  K21=37 | P21=76 | S21='=IF(Q21="x",2,0)' | V21='=IF(M21="x",2,0)' | W21='=IF(Q21="x",2,0)'
+  K22=38 | P22=77 | S22='=IF(Q22="x",2,0)' | W22='=IF(Q22="x",2,0)' | AD22='El perfil del candidato no es muy similar al del pequeño empresario urbano exitoso y si bien tiene aspectos favorables al emprendimiento tambien los tiene en contra. La probabilidad de crear un negocio y de hacerlo crecer es relativa.'
+  K23=39 | P23=78
+  K24=40 | P24=79
+  K25=41 | P25=80 | V25='=IF(L25="x",2,0)'
+  K26=42 | P26=81 | S26='=IF(Q26="x",2,0)' | W26='=IF(Q26="x",2,0)'
+  K27=43 | P27=82 | AD27='POTENCIAL EMPRESARIAL BAJO (hasta 50 puntos)'
+  K28=44 | P28=83 | V28='=IF(L28="x",2,0)'
+  K29=45 | P29=84 | AD29='El perfil del candidato no se asemeja al del pequeño empresario urbano exitoso. La probabilidad de crear un negocio y de hacerlo es baja'
+  K30=46 | P30=85 | S30='=IF(Q30="x",2,0)' | V30='=IF(L30="x",2,0)' | W30='=IF(Q30="x",2,0)'
+  K31=47 | P31=86 | V31='=IF(L31="x",2,0)'
+  K32=48 | P32=87
+  K33=49 | P33=88 | V33='=IF(M33="x",2,0)'
+  K34=50 | P34=89 | S34='=IF(Q34="x",2,0)' | V34='=IF(L34="x",2,0)' | W34='=IF(Q34="x",2,0)'
+  K35=51 | P35=90
+  K36=52 | P36=91
+  K37=53 | P37=92
+  K38=54 | P38=93 | S38='=IF(Q38="x",2,0)' | V38='=IF(M38="x",2,0)' | W38='=IF(Q38="x",2,0)'
+  K39=55 | P39=94
+  K40=56 | P40=95
+
+#### Gráfico24 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico25 — NO es worksheet (tipo: Chartsheet), se omite
+
+#### Gráfico26 — NO es worksheet (tipo: Chartsheet), se omite

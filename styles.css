@@ -18,7 +18,24 @@
     --border:       #e2e8f0;
     --text:         #0f172a;
     --text-soft:    #475569;
+    --text-strong:  #0f172a;
     --bg-soft:      #f8fafc;
+    --bg-card:      #ffffff;
+}
+
+/* Auto-switch para dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --border:       #334155;
+        --text:         #e2e8f0;
+        --text-soft:    #94a3b8;
+        --text-strong:  #f1f5f9;
+        --bg-soft:      #0f172a;
+        --bg-card:      #1e293b;
+        --primary-soft: #1e3a8a;
+        --success-soft: #064e3b;
+        --warning-soft: #78350f;
+    }
 }
 
 /* ─── Chrome de Streamlit ─── */
@@ -39,12 +56,13 @@ h2, h3 { font-weight: 650; letter-spacing: -.01em; }
 .step-bar {
     display: flex; justify-content: center; gap: 0;
     margin: 4px 0 28px 0;
-    background: white; border-radius: 12px; padding: 6px;
+    background: var(--bg-card); border-radius: 12px; padding: 6px;
     box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
     border: 1px solid var(--border);
+    flex-wrap: wrap;
 }
 .step {
-    padding: 10px 32px; font-size: 13px; font-weight: 600;
+    padding: 10px 22px; font-size: 12px; font-weight: 600;
     border-radius: 8px; color: var(--text-soft);
     background: transparent; transition: all .2s;
     display: flex; align-items: center; gap: 6px;
@@ -63,7 +81,7 @@ h2, h3 { font-weight: 650; letter-spacing: -.01em; }
    MÉTRICAS
    ============================================================= */
 [data-testid="metric-container"] {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px 18px !important;
@@ -99,15 +117,15 @@ h2, h3 { font-weight: 650; letter-spacing: -.01em; }
     flex-wrap: wrap;
 }
 [data-testid="stTabs"] [data-baseweb="tab"] {
-    height: 30px;
-    padding: 0 12px;
+    height: 32px;
+    padding: 0 14px;
     font-size: 12px;
     font-weight: 600;
     border-radius: 6px;
     color: var(--text-soft);
 }
 [data-testid="stTabs"] [aria-selected="true"] {
-    background: white !important;
+    background: var(--bg-card) !important;
     color: var(--primary) !important;
     box-shadow: 0 1px 3px rgba(15,23,42,.08);
 }
@@ -115,32 +133,35 @@ h2, h3 { font-weight: 650; letter-spacing: -.01em; }
 [data-testid="stTabs"] [data-baseweb="tab-border"] { display: none; }
 
 /* =============================================================
-   ÍTEMS — Card unificada con st.container(border=True)
+   ÍTEMS — Card con título visible en claro/oscuro
    ============================================================= */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 4px 10px 2px 10px !important;
-    border-radius: 8px !important;
+    padding: 8px 12px 6px 12px !important;
+    border-radius: 10px !important;
     border-color: var(--border) !important;
-    background: white;
+    background: var(--bg-card) !important;
     transition: border-color .15s, box-shadow .15s;
-    margin-bottom: 2px;
+    margin-bottom: 6px;
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     border-color: var(--primary) !important;
-    box-shadow: 0 2px 8px rgba(37,99,235,.08);
+    box-shadow: 0 2px 8px rgba(37,99,235,.12);
 }
 
 .item-title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: var(--text);
-    margin: 0;
+    color: var(--text-strong) !important;
+    margin: 0 0 4px 0;
     line-height: 1.2;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    letter-spacing: .3px;
 }
-.item-title.dudoso { color: var(--warning); }
+.item-title.dudoso {
+    color: var(--warning) !important;
+}
 
 .mini-badge {
     font-size: 9px;
@@ -148,7 +169,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     background: var(--warning-soft);
     color: var(--warning);
     border: 1px solid var(--warning);
-    padding: 0 5px;
+    padding: 1px 6px;
     border-radius: 999px;
     text-transform: uppercase;
     letter-spacing: .3px;
@@ -156,21 +177,21 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
 
 /* Radios compactos dentro de las cards */
 div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] > div[role="radiogroup"] {
-    gap: 2px !important;
+    gap: 10px !important;
     flex-wrap: nowrap !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] label {
-    padding: 0 3px !important;
+    padding: 0 !important;
     margin: 0 !important;
     min-height: 0 !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] label p {
-    font-size: 11px !important;
+    font-size: 12px !important;
     font-weight: 500 !important;
     line-height: 1 !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stRadio"] label > div:first-child {
-    transform: scale(0.72);
+    transform: scale(0.82);
     margin-right: -4px;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
@@ -239,11 +260,22 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
 }
 .voc-stats b { font-weight: 700; }
 
+.voc-card .nivel-chip {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(255,255,255,.18);
+    color: white;
+    border-color: rgba(255,255,255,.35);
+    backdrop-filter: blur(4px);
+}
+.voc-card .nivel-chip.bajo    { background: rgba(220,38,38,.35);  border-color: rgba(255,255,255,.5); }
+.voc-card .nivel-chip.medio   { background: rgba(217,119,6,.35);  border-color: rgba(255,255,255,.5); }
+.voc-card .nivel-chip.alto    { background: rgba(5,150,105,.45);  border-color: rgba(255,255,255,.55); }
+
 /* =============================================================
    CARRERAS
    ============================================================= */
 .career-card {
-    background: white; border-radius: 12px; padding: 16px 18px;
+    background: var(--bg-card); border-radius: 12px; padding: 16px 18px;
     margin-bottom: 12px; border: 1px solid var(--border);
     border-left: 4px solid var(--primary);
     box-shadow: 0 1px 3px rgba(15,23,42,.05);
@@ -255,11 +287,11 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
 }
 .career-card.principal {
     border-left-color: var(--success);
-    background: linear-gradient(180deg, #ffffff 0%, var(--success-soft) 100%);
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--success-soft) 100%);
 }
 .career-card.respaldo {
     border-left-color: var(--primary);
-    background: linear-gradient(180deg, #ffffff 0%, var(--primary-soft) 100%);
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--primary-soft) 100%);
 }
 .career-badge {
     font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -291,7 +323,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
    ============================================================= */
 .crit-card {
     position: relative;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-top: 4px solid var(--primary);
     border-radius: 12px;
@@ -365,25 +397,44 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
 }
 
 /* =============================================================
+   NIVEL DE CORRESPONDENCIA (chip)
+   ============================================================= */
+.nivel-chip {
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .8px;
+    padding: 3px 9px; border-radius: 999px;
+    display: inline-block;
+    border: 1px solid;
+}
+.nivel-chip.bajo {
+    background: #fee2e2; color: #991b1b; border-color: #fca5a5;
+}
+.nivel-chip.medio {
+    background: #fef3c7; color: #92400e; border-color: #fcd34d;
+}
+.nivel-chip.alto {
+    background: #d1fae5; color: #065f46; border-color: #6ee7b7;
+}
+
+/* =============================================================
    PASO 4 — PROPUESTA DEL ESTUDIANTE
    ============================================================= */
-
 .proposal-box {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 20px 22px;
+    padding: 18px 22px;
     box-shadow: 0 1px 3px rgba(15,23,42,.05);
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 .proposal-box h4 {
-    font-size: 14px; font-weight: 700; color: var(--text);
+    font-size: 13px; font-weight: 700; color: var(--text);
     text-transform: uppercase; letter-spacing: .6px;
     margin: 0 0 4px 0;
 }
 .proposal-box p {
     font-size: 12px; color: var(--text-soft);
-    margin: 0 0 14px 0; line-height: 1.4;
+    margin: 0; line-height: 1.4;
 }
 
 .proposal-row {
@@ -395,7 +446,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
     border: 1px solid var(--border);
 }
 .proposal-num {
-    width: 24px; height: 24px; flex-shrink: 0;
+    width: 22px; height: 22px; flex-shrink: 0;
     border-radius: 50%;
     background: var(--primary); color: white;
     font-size: 11px; font-weight: 700;
@@ -410,23 +461,16 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
     padding: 2px 7px; border-radius: 999px;
     letter-spacing: .5px;
 }
-.proposal-origen.test {
-    background: var(--success-soft); color: var(--success);
-    border: 1px solid var(--success);
-}
-.proposal-origen.alumno {
-    background: var(--warning-soft); color: var(--warning);
-    border: 1px solid var(--warning);
-}
-.proposal-origen.final {
-    background: var(--primary); color: white;
-    border: 1px solid var(--primary-dark);
-}
+.proposal-origen.test    { background: var(--success-soft); color: var(--success); border: 1px solid var(--success); }
+.proposal-origen.alumno  { background: var(--warning-soft); color: var(--warning); border: 1px solid var(--warning); }
+.proposal-origen.sintesis{ background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary); }
 
-/* Card de resultado final */
+/* =============================================================
+   PASO 5 — CARRERAS FINALES
+   ============================================================= */
 .final-card {
     position: relative;
-    background: linear-gradient(180deg, #ffffff 0%, var(--primary-soft) 100%);
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--primary-soft) 100%);
     border: 1px solid var(--primary);
     border-left: 5px solid var(--primary);
     border-radius: 12px;
@@ -453,24 +497,21 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
 .meta-chip {
     font-size: 11px; font-weight: 600;
     padding: 3px 9px; border-radius: 999px;
-    background: white; color: var(--text-soft);
+    background: var(--bg-card); color: var(--text-soft);
     border: 1px solid var(--border);
 }
-.meta-chip.nivel-univ {
-    background: #eff6ff; color: #1e40af; border-color: #bfdbfe;
+.meta-chip.nivel-univ   { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.meta-chip.nivel-tec    { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.meta-chip.nivel-cetpro { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.meta-chip.inst-pub     { background: #ecfeff; color: #155e75; border-color: #a5f3fc; }
+.meta-chip.inst-priv    { background: #fdf2f8; color: #9d174d; border-color: #fbcfe8; }
+
+.final-card .origen-line {
+    font-size: 12px; color: var(--text-soft);
+    margin-bottom: 6px;
 }
-.meta-chip.nivel-tec {
-    background: #fef3c7; color: #92400e; border-color: #fde68a;
-}
-.meta-chip.nivel-cetpro {
-    background: #ecfdf5; color: #065f46; border-color: #a7f3d0;
-}
-.meta-chip.inst-pub {
-    background: #ecfeff; color: #155e75; border-color: #a5f3fc;
-}
-.meta-chip.inst-priv {
-    background: #fdf2f8; color: #9d174d; border-color: #fbcfe8;
-}
+.final-card .origen-line b { color: var(--text); }
+
 .final-card .score-bar {
     height: 6px; border-radius: 999px;
     background: var(--border);
@@ -483,13 +524,186 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
     transition: width .4s ease;
 }
 
-/* Selector de nivel / institución */
-.select-cards {
+.score-detail {
+    display: flex; gap: 12px;
+    font-size: 11px; color: var(--text-soft);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+}
+.score-detail span b { color: var(--text); }
+
+/* =============================================================
+   PASO 6 — TABLA DE NIVELES DE CORRESPONDENCIA
+   ============================================================= */
+.niveles-hero {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 26px 30px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(15,23,42,.18);
+}
+.niveles-hero .title {
+    font-size: 22px; font-weight: 700; letter-spacing: -.01em;
+    margin-bottom: 4px;
+}
+.niveles-hero .sub {
+    font-size: 13px; opacity: .8;
+}
+
+.niveles-legend {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+.legend-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+.legend-pill .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+}
+
+.niveles-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    margin-top: 4px;
+}
+.niveles-table thead th {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--text-soft);
+    text-align: left;
+    padding: 8px 14px;
+    border-bottom: 2px solid var(--border);
+}
+.niveles-table tbody tr {
+    background: var(--bg-card);
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+}
+.niveles-table tbody tr:hover {
+    box-shadow: 0 4px 12px rgba(15,23,42,.08);
+}
+.niveles-table tbody td {
+    padding: 14px;
+    font-size: 14px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    color: var(--text);
+}
+.niveles-table tbody td:first-child {
+    border-left: 1px solid var(--border);
+    border-radius: 10px 0 0 10px;
+    font-weight: 700;
+    color: var(--text-soft);
+    width: 48px;
+    text-align: center;
+}
+.niveles-table tbody td:last-child {
+    border-right: 1px solid var(--border);
+    border-radius: 0 10px 10px 0;
+}
+.niveles-table .tipo-name {
+    font-weight: 700; color: var(--text);
+    font-size: 15px;
+}
+.niveles-table .tipo-crit {
+    display: inline-block;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px;
+    background: var(--primary-soft); color: var(--primary);
+    margin-left: 8px;
+    vertical-align: middle;
+}
+.niveles-table .baremo-val {
+    font-size: 20px; font-weight: 800; color: var(--text);
+    font-family: 'SF Mono', 'Consolas', monospace;
+}
+.niveles-table .nivel-cell {
+    text-align: center;
+}
+.niveles-table .nivel-cell .nivel-chip {
+    font-size: 11px;
+    padding: 5px 12px;
+}
+.niveles-table .mark-cell {
+    text-align: center;
+    width: 60px;
+}
+.niveles-table .mark-cell .x {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    font-weight: 800; font-size: 14px;
+    color: white;
+}
+.niveles-table .mark-cell .x.bajo  { background: #ef4444; }
+.niveles-table .mark-cell .x.medio { background: #f59e0b; }
+.niveles-table .mark-cell .x.alto  { background: #10b981; }
+.niveles-table .mark-cell .empty {
+    color: #cbd5e1; font-size: 16px;
+}
+
+.niveles-summary {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 14px;
+    margin-top: 24px;
 }
+.niveles-summary .card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+}
+.niveles-summary .card .count {
+    font-size: 32px; font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+.niveles-summary .card.bajo  .count { color: #ef4444; }
+.niveles-summary .card.medio .count { color: #f59e0b; }
+.niveles-summary .card.alto  .count { color: #10b981; }
+.niveles-summary .card .lbl {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--text-soft);
+}
+.niveles-summary .card .desc {
+    font-size: 11px; color: var(--text-soft);
+    margin-top: 6px; line-height: 1.4;
+}
+
+.predominante-banner {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-top: 24px;
+    box-shadow: 0 8px 20px rgba(37,99,235,.25);
+}
+.predominante-banner .lbl {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    opacity: .85; margin-bottom: 6px;
+}
+.predominante-banner .nombre {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: -.01em; margin-bottom: 4px;
+}
+.predominante-banner .meta {
+    font-size: 13px; opacity: .9;
+}
+
 /* =============================================================
    DATAFRAME
    ============================================================= */
@@ -497,3 +711,198 @@ div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="element-container"
     border-radius: 10px; overflow: hidden;
     border: 1px solid var(--border);
 }
+
+/* =============================================================
+   PASO 6 — SECCIONES DEL INFORME FINAL
+   ============================================================= */
+
+/* Bloque contenedor de cada sección */
+.informe-block {
+    margin-bottom: 32px;
+}
+
+.informe-block .block-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.informe-block .block-num {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    font-size: 14px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.informe-block .block-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    letter-spacing: -.01em;
+}
+.informe-block .block-sub {
+    font-size: 12px;
+    color: var(--text-soft);
+    margin-top: 2px;
+}
+
+/* Variante de la tabla de niveles para carreras */
+.niveles-table.carreras tbody td:first-child {
+    color: var(--text-soft);
+}
+
+.niveles-table .origen-cell {
+    text-align: center;
+    width: 100px;
+}
+.origen-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid;
+}
+.origen-tag.test     { background: var(--success-soft); color: var(--success); border-color: var(--success); }
+.origen-tag.alumno   { background: var(--warning-soft); color: var(--warning); border-color: var(--warning); }
+.origen-tag.sintesis { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+
+.niveles-table .score-val {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+/* Badge de puesto para carreras finales */
+.puesto-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: white;
+    letter-spacing: .3px;
+}
+.puesto-badge.p1 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.puesto-badge.p2 { background: linear-gradient(135deg, #64748b, #334155); }
+
+/* Sección vacía */
+.empty-note {
+    padding: 18px 20px;
+    background: var(--bg-soft);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-soft);
+    text-align: center;
+}
+
+/* =============================================================
+   Ocultar iframes de atajos JS
+   ============================================================= */
+iframe[height="0"],
+iframe[style*="height: 0"],
+iframe[style*="height:0"] {
+    display: none !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    border: none !important;
+}
+
+/* =============================================================
+   VISUALIZACIONES — Plotly wrappers
+   ============================================================= */
+.viz-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+@media (max-width: 1100px) {
+    .viz-grid { grid-template-columns: 1fr; }
+}
+
+.viz-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px 6px 20px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    transition: box-shadow .15s;
+}
+.viz-card:hover {
+    box-shadow: 0 6px 18px rgba(15,23,42,.08);
+}
+.viz-card .viz-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 2px;
+}
+.viz-card .viz-sub {
+    font-size: 11px;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+}
+
+/* Plotly container */
+.js-plotly-plot, .plot-container {
+    background: transparent !important;
+}
+.modebar { display: none !important; }
+
+/* Gauge centrado */
+.gauge-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+}
+
+/* Comparación Top 2 */
+.comp-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.comp-row:last-child { border-bottom: none; }
+.comp-rank {
+    width: 26px; height: 26px; flex-shrink: 0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: white;
+}
+.comp-rank.p1 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.comp-rank.p2 { background: linear-gradient(135deg, #64748b, #334155); }
+.comp-rank.pr { background: #cbd5e1; color: #64748b; }
+.comp-nombre {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    flex: 1;
+}
+.comp-baremo {
+    font-size: 15px; font-weight: 800; color: var(--text);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    min-width: 40px; text-align: right;
+}
+.comp-diff {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px;
+    min-width: 60px; text-align: center;
+}
+.comp-diff.pos { background: #d1fae5; color: #065f46; }
+.comp-diff.neg { background: #fee2e2; color: #991b1b; }
+.comp-diff.eq  { background: var(--bg-soft); color: var(--text-soft); }

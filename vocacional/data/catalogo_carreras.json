@@ -1,0 +1,765 @@
+{
+  "metadata": {
+    "total_carreras": 83,
+    "areas_riasec": ["R", "I", "A", "S", "E", "C"],
+    "nota": "Nombres alineados con vocacional/carreras.py"
+  },
+  "carreras": [
+    {
+      "nombre": "Mecánica Automotriz",
+      "area": "Tecnología",
+      "nivel": ["tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.95, 0.45, 0.20, 0.25, 0.40, 0.55],
+      "keywords": ["moto", "motos", "motor", "mecanica", "vehiculo", "automotriz", "taller", "reparar", "carro", "auto", "camion"],
+      "alias": ["corredor de motos", "mecanico", "piloto de motos", "motocicleta", "scooter", "cuatrimoto"]
+    },
+    {
+      "nombre": "Ing Automotriz",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.95, 0.75, 0.25, 0.30, 0.50, 0.60],
+      "keywords": ["moto", "motor", "automotriz", "vehiculo", "carro", "auto", "diseno automotriz"],
+      "alias": ["ingenieria automotriz", "ing automotriz"]
+    },
+    {
+      "nombre": "Ing Mecánica",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.90, 0.85, 0.30, 0.25, 0.50, 0.65],
+      "keywords": ["mecanica", "motor", "motores", "maquinas", "vehiculos", "fabricacion"],
+      "alias": ["ingenieria mecanica", "ing mecanica"]
+    },
+    {
+      "nombre": "Ing Mecatrónica",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.90, 0.40, 0.25, 0.55, 0.70],
+      "keywords": ["robotica", "automatizacion", "mecanica", "electronica", "sistemas"],
+      "alias": ["mecatronica", "robotica", "ing mecatronica"]
+    },
+    {
+      "nombre": "Mecatrónica",
+      "area": "Tecnología",
+      "nivel": ["tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.85, 0.40, 0.30, 0.50, 0.65],
+      "keywords": ["robotica", "automatizacion", "mecanica", "electronica"],
+      "alias": ["mecatronica tecnico", "tec mecatronica"]
+    },
+    {
+      "nombre": "Ing Industrial",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.80, 0.30, 0.40, 0.75, 0.85],
+      "keywords": ["procesos", "optimizacion", "produccion", "empresa", "gestion"],
+      "alias": ["ingenieria industrial", "ing industrial"]
+    },
+    {
+      "nombre": "Industrial",
+      "area": "Tecnología",
+      "nivel": ["tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.75, 0.30, 0.40, 0.70, 0.80],
+      "keywords": ["procesos", "produccion", "industrial"],
+      "alias": ["industrial tecnico"]
+    },
+    {
+      "nombre": "Ing Civil",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.85, 0.30, 0.30, 0.60, 0.70],
+      "keywords": ["construir", "construccion", "obras", "estructuras", "edificios", "puentes"],
+      "alias": ["ingenieria civil", "ing civil", "civil"]
+    },
+    {
+      "nombre": "Ing de Minas",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.90, 0.80, 0.25, 0.30, 0.55, 0.65],
+      "keywords": ["mineria", "minas", "extraccion", "yacimientos", "geologia"],
+      "alias": ["ingenieria de minas", "ing minas", "minas"]
+    },
+    {
+      "nombre": "Ing Metalúrgica",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.90, 0.80, 0.25, 0.30, 0.50, 0.65],
+      "keywords": ["metales", "metalurgia", "fundicion", "aceros", "minerales"],
+      "alias": ["ingenieria metalurgica", "ing metalurgica"]
+    },
+    {
+      "nombre": "Metalúrgica",
+      "area": "Tecnología",
+      "nivel": ["tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.90, 0.70, 0.25, 0.30, 0.45, 0.60],
+      "keywords": ["metales", "metalurgia", "fundicion"],
+      "alias": ["metalurgica tecnico"]
+    },
+    {
+      "nombre": "Ing Eléctrica",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.90, 0.85, 0.20, 0.25, 0.50, 0.70],
+      "keywords": ["electricidad", "energia", "circuitos", "potencia"],
+      "alias": ["ingenieria electrica", "ing electrica", "electrica"]
+    },
+    {
+      "nombre": "Ing Electrónica",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.90, 0.30, 0.25, 0.50, 0.70],
+      "keywords": ["electronica", "circuitos", "hardware", "chips", "sensores"],
+      "alias": ["ingenieria electronica", "ing electronica", "electronica"]
+    },
+    {
+      "nombre": "Ing Química",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.75, 0.90, 0.30, 0.35, 0.50, 0.70],
+      "keywords": ["quimica", "procesos", "industria quimica", "laboratorio"],
+      "alias": ["ingenieria quimica", "ing quimica"]
+    },
+    {
+      "nombre": "Ing Ambiental",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.85, 0.40, 0.50, 0.50, 0.60],
+      "keywords": ["ambiente", "ecologia", "contaminacion", "sostenibilidad"],
+      "alias": ["ingenieria ambiental", "ing ambiental", "ambiental"]
+    },
+    {
+      "nombre": "Ing Forestal",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.75, 0.35, 0.40, 0.50, 0.55],
+      "keywords": ["bosques", "forestal", "madera", "arboles", "naturaleza"],
+      "alias": ["ingenieria forestal", "ing forestal", "forestal"]
+    },
+    {
+      "nombre": "Ing de Sistemas",
+      "area": "Tecnología",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.95, 0.35, 0.30, 0.50, 0.70],
+      "keywords": ["software", "computadora", "programacion", "sistemas", "informatica", "redes", "codigo", "app", "pc", "laptop"],
+      "alias": ["ing de sistemas", "ingenieria de sistemas", "sistemas", "ing sistemas", "programador"]
+    },
+    {
+      "nombre": "Tec en Informática",
+      "area": "Tecnología",
+      "nivel": ["tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.65, 0.85, 0.40, 0.40, 0.55, 0.75],
+      "keywords": ["computadora", "informatica", "software", "sistemas", "pc"],
+      "alias": ["tec en informatica", "tecnico en informatica"]
+    },
+    {
+      "nombre": "Informática",
+      "area": "Tecnología",
+      "nivel": ["tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.65, 0.90, 0.40, 0.35, 0.50, 0.75],
+      "keywords": ["computadora", "informatica", "software", "programacion"],
+      "alias": ["informatica", "computacion"]
+    },
+    {
+      "nombre": "Ing de Sonido",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.70, 0.90, 0.40, 0.55, 0.55],
+      "keywords": ["sonido", "audio", "musica", "mezcla", "produccion musical"],
+      "alias": ["ingenieria de sonido", "ing sonido", "sonido", "audio"]
+    },
+    {
+      "nombre": "Arquitectura",
+      "area": "Artes",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.65, 0.90, 0.35, 0.60, 0.60],
+      "keywords": ["construir", "planos", "edificios", "diseno", "espacios", "maquetas", "casas", "construccion"],
+      "alias": ["arquitectura", "arquitecto", "diseno de espacios"]
+    },
+    {
+      "nombre": "Diseño de Interiores",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.50, 0.90, 0.50, 0.65, 0.55],
+      "keywords": ["interiores", "espacios", "decoracion", "diseno", "casas"],
+      "alias": ["diseno de interiores", "interiores"]
+    },
+    {
+      "nombre": "Diseño Gráfico",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.40, 0.40, 0.95, 0.45, 0.60, 0.50],
+      "keywords": ["dibujo", "diseno", "arte", "visual", "marca", "ilustracion", "creatividad", "dibujar"],
+      "alias": ["diseno grafico", "disenador", "diseno", "disenador grafico", "grafico"]
+    },
+    {
+      "nombre": "Diseño de Modas",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.35, 0.95, 0.50, 0.70, 0.50],
+      "keywords": ["moda", "ropa", "diseno", "costura", "tendencias"],
+      "alias": ["diseno de modas", "modas", "disenador de moda"]
+    },
+    {
+      "nombre": "Artes Visuales",
+      "area": "Artes",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.40, 0.95, 0.50, 0.55, 0.40],
+      "keywords": ["arte", "visual", "dibujo", "pintura", "creatividad"],
+      "alias": ["artes visuales", "artes visual"]
+    },
+    {
+      "nombre": "Artes Plásticas",
+      "area": "Artes",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.35, 0.95, 0.50, 0.50, 0.40],
+      "keywords": ["arte", "pintura", "escultura", "dibujo", "creatividad"],
+      "alias": ["artes plasticas", "plasticas"]
+    },
+    {
+      "nombre": "Dibujo y Pintura",
+      "area": "Artes",
+      "nivel": ["cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.30, 0.95, 0.50, 0.50, 0.40],
+      "keywords": ["dibujo", "pintura", "dibujar", "pintar", "arte"],
+      "alias": ["dibujo y pintura", "dibujo", "pintura"]
+    },
+    {
+      "nombre": "Artista Profesional",
+      "area": "Artes",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.40, 0.95, 0.50, 0.70, 0.40],
+      "keywords": ["arte", "artista", "creatividad", "espectaculo"],
+      "alias": ["artista profesional", "artista"]
+    },
+    {
+      "nombre": "Profesional Artístico Músico",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.40, 0.95, 0.55, 0.65, 0.40],
+      "keywords": ["musica", "canciones", "instrumento", "cantar", "composicion", "musico"],
+      "alias": ["musica", "musico", "cantante", "compositor", "artistico musico"]
+    },
+    {
+      "nombre": "Actuación",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.40, 0.30, 0.95, 0.70, 0.75, 0.35],
+      "keywords": ["actuar", "teatro", "drama", "escenario", "interpretacion"],
+      "alias": ["actuacion", "actor", "actriz", "teatro"]
+    },
+    {
+      "nombre": "Fotografía",
+      "area": "Artes",
+      "nivel": ["universitario", "tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.55, 0.50, 0.90, 0.50, 0.60, 0.50],
+      "keywords": ["fotografia", "camara", "imagenes", "visual", "fotos"],
+      "alias": ["fotografia", "fotografo", "fotografa"]
+    },
+    {
+      "nombre": "Literatura",
+      "area": "Artes",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.10, 0.85, 0.90, 0.60, 0.50, 0.50],
+      "keywords": ["libros", "escritura", "literatura", "escribir", "poesia"],
+      "alias": ["literatura", "escritor", "letras"]
+    },
+    {
+      "nombre": "C. Comunicación",
+      "area": "Comunicación",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.60, 0.85, 0.75, 0.70, 0.50],
+      "keywords": ["comunicacion", "periodismo", "medios", "prensa", "radio", "tv"],
+      "alias": ["ciencias de la comunicacion", "comunicacion", "periodismo"]
+    },
+    {
+      "nombre": "Publicidad",
+      "area": "Comunicación",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.40, 0.85, 0.60, 0.90, 0.55],
+      "keywords": ["publicidad", "marketing", "creatividad", "campañas", "medios"],
+      "alias": ["publicidad", "publicista"]
+    },
+    {
+      "nombre": "Marketing",
+      "area": "Negocios",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.40, 0.70, 0.65, 0.95, 0.60],
+      "keywords": ["marketing", "ventas", "mercado", "clientes", "publicidad"],
+      "alias": ["marketing", "mercadotecnia"]
+    },
+    {
+      "nombre": "Administración",
+      "area": "Negocios",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.50, 0.30, 0.60, 0.90, 0.85],
+      "keywords": ["empresa", "negocio", "gestion", "administrar", "gerente", "emprender"],
+      "alias": ["administracion", "admin", "gestion"]
+    },
+    {
+      "nombre": "Administración de Empresas",
+      "area": "Negocios",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.50, 0.30, 0.60, 0.90, 0.85],
+      "keywords": ["empresa", "negocios", "gestion", "administracion"],
+      "alias": ["administracion de empresas", "admin empresas"]
+    },
+    {
+      "nombre": "Negocios Internacionales",
+      "area": "Negocios",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.50, 0.40, 0.60, 0.90, 0.80],
+      "keywords": ["negocios", "internacional", "comercio", "exportacion", "importacion"],
+      "alias": ["negocios internacionales", "comercio internacional"]
+    },
+    {
+      "nombre": "Economía",
+      "area": "Negocios",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.80, 0.20, 0.50, 0.70, 0.90],
+      "keywords": ["economia", "dinero", "mercados", "finanzas", "analisis"],
+      "alias": ["economia", "economista"]
+    },
+    {
+      "nombre": "Contabilidad",
+      "area": "Negocios",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.20, 0.50, 0.15, 0.30, 0.60, 0.95],
+      "keywords": ["numeros", "contabilidad", "impuestos", "auditoria", "balance", "finanzas"],
+      "alias": ["contabilidad", "contador", "contadora"]
+    },
+    {
+      "nombre": "Finanzas",
+      "area": "Negocios",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.25, 0.70, 0.20, 0.35, 0.85, 0.90],
+      "keywords": ["dinero", "finanzas", "inversiones", "bancos", "numeros"],
+      "alias": ["finanzas", "financiero"]
+    },
+    {
+      "nombre": "Estadística",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.90, 0.20, 0.40, 0.50, 0.85],
+      "keywords": ["numeros", "datos", "estadistica", "matematica", "analisis"],
+      "alias": ["estadistica", "estadistico"]
+    },
+    {
+      "nombre": "Matemática",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.95, 0.30, 0.50, 0.40, 0.85],
+      "keywords": ["numeros", "matematica", "calculo", "algebra", "logica"],
+      "alias": ["matematica", "matematicas", "matematico"]
+    },
+    {
+      "nombre": "Física",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.95, 0.30, 0.30, 0.40, 0.65],
+      "keywords": ["fisica", "ciencia", "universo", "energia", "movimiento"],
+      "alias": ["fisica", "fisico"]
+    },
+    {
+      "nombre": "Química",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.65, 0.95, 0.35, 0.40, 0.40, 0.65],
+      "keywords": ["quimica", "laboratorio", "reacciones", "elementos", "ciencia"],
+      "alias": ["quimica", "quimico"]
+    },
+    {
+      "nombre": "Biología",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.95, 0.40, 0.50, 0.40, 0.55],
+      "keywords": ["biologia", "vida", "celulas", "organismos", "naturaleza"],
+      "alias": ["biologia", "biologo"]
+    },
+    {
+      "nombre": "Astronomía",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.50, 0.95, 0.40, 0.40, 0.35, 0.60],
+      "keywords": ["astronomia", "espacio", "planetas", "estrellas", "universo"],
+      "alias": ["astronomia", "astronomo"]
+    },
+    {
+      "nombre": "Farmacia",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.90, 0.35, 0.65, 0.50, 0.75],
+      "keywords": ["farmacia", "medicamentos", "quimica", "salud", "farmacos"],
+      "alias": ["farmacia", "farmaceutico", "quimico farmaceutico"]
+    },
+    {
+      "nombre": "Medicina",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.55, 0.95, 0.25, 0.90, 0.45, 0.60],
+      "keywords": ["salud", "medico", "paciente", "hospital", "curar", "enfermedad", "doctor"],
+      "alias": ["medicina", "doctor", "medico", "ser doctor", "medicina humana"]
+    },
+    {
+      "nombre": "Enfermería",
+      "area": "Salud",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.65, 0.30, 0.95, 0.35, 0.65],
+      "keywords": ["cuidar", "paciente", "salud", "hospital", "enfermeria", "auxiliar"],
+      "alias": ["enfermeria", "enfermera", "enfermero"]
+    },
+    {
+      "nombre": "Obstetricia",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.70, 0.30, 0.95, 0.40, 0.60],
+      "keywords": ["obstetricia", "maternidad", "embarazo", "salud", "bebes"],
+      "alias": ["obstetricia", "obstetra"]
+    },
+    {
+      "nombre": "Odontología",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.85, 0.40, 0.80, 0.50, 0.65],
+      "keywords": ["dientes", "odontologia", "boca", "salud", "dentista"],
+      "alias": ["odontologia", "dentista", "odontologo"]
+    },
+    {
+      "nombre": "Psicología",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.25, 0.85, 0.55, 0.95, 0.50, 0.50],
+      "keywords": ["mente", "personas", "comportamiento", "terapia", "escuchar", "ayudar"],
+      "alias": ["psicologia", "psicologo", "psicologa", "terapeuta"]
+    },
+    {
+      "nombre": "Nutricionista",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.40, 0.80, 0.40, 0.90, 0.45, 0.65],
+      "keywords": ["nutricion", "alimentacion", "dietas", "salud", "comida"],
+      "alias": ["nutricionista", "nutricion", "dietista"]
+    },
+    {
+      "nombre": "Tecnología Médica",
+      "area": "Salud",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.90, 0.30, 0.75, 0.40, 0.70],
+      "keywords": ["laboratorio", "salud", "diagnostico", "tecnologia", "medicina"],
+      "alias": ["tecnologia medica", "tec medica"]
+    },
+    {
+      "nombre": "Ciencias de la Salud",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.50, 0.90, 0.30, 0.85, 0.40, 0.65],
+      "keywords": ["salud", "medicina", "paciente", "bienestar"],
+      "alias": ["ciencias de la salud", "salud"]
+    },
+    {
+      "nombre": "Tec en Laboratorio",
+      "area": "Salud",
+      "nivel": ["tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.85, 0.30, 0.50, 0.40, 0.70],
+      "keywords": ["laboratorio", "analisis", "muestras", "quimica", "salud"],
+      "alias": ["tec en laboratorio", "tecnico laboratorio", "laboratorio"]
+    },
+    {
+      "nombre": "Veterinaria",
+      "area": "Salud",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.80, 0.80, 0.40, 0.80, 0.50, 0.60],
+      "keywords": ["animales", "animal", "mascotas", "veterinaria", "salud animal"],
+      "alias": ["veterinaria", "veterinario", "medicina veterinaria"]
+    },
+    {
+      "nombre": "Zootecnia",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.85, 0.75, 0.30, 0.50, 0.50, 0.55],
+      "keywords": ["animales", "ganaderia", "cria", "produccion animal", "campo"],
+      "alias": ["zootecnia", "zootecnista"]
+    },
+    {
+      "nombre": "Agronomía",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.75, 0.30, 0.50, 0.55, 0.55],
+      "keywords": ["plantas", "cultivo", "campo", "agricultura", "tierra", "cultivar"],
+      "alias": ["agronomia", "agronomo", "agricultura"]
+    },
+    {
+      "nombre": "Biología",
+      "area": "Ciencias",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.60, 0.95, 0.40, 0.50, 0.40, 0.55],
+      "keywords": ["biologia", "vida", "naturaleza", "organismos", "ciencia"],
+      "alias": ["biologia marina", "biologo"]
+    },
+    {
+      "nombre": "Educación",
+      "area": "Educación",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.50, 0.50, 0.95, 0.55, 0.50],
+      "keywords": ["ensenar", "profesor", "docente", "ninos", "colegio", "pedagogia"],
+      "alias": ["educacion", "profesor", "docente", "maestro"]
+    },
+    {
+      "nombre": "Pedagogía",
+      "area": "Educación",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.50, 0.50, 0.95, 0.55, 0.50],
+      "keywords": ["ensenar", "pedagogia", "profesor", "docencia", "educacion"],
+      "alias": ["pedagogia", "pedagogo"]
+    },
+    {
+      "nombre": "Educación Artística",
+      "area": "Educación",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.40, 0.40, 0.95, 0.85, 0.50, 0.40],
+      "keywords": ["arte", "educacion", "ensenar", "creatividad", "musica"],
+      "alias": ["educacion artistica", "arte educacion"]
+    },
+    {
+      "nombre": "Asistente Social",
+      "area": "Ciencias Sociales",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.30, 0.50, 0.50, 0.95, 0.50, 0.60],
+      "keywords": ["ayudar", "social", "comunidad", "personas", "servicio"],
+      "alias": ["asistente social", "trabajo social", "trabajador social"]
+    },
+    {
+      "nombre": "Sociología",
+      "area": "Ciencias Sociales",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.20, 0.85, 0.50, 0.85, 0.60, 0.55],
+      "keywords": ["sociedad", "sociologia", "comunidad", "grupos", "personas"],
+      "alias": ["sociologia", "sociologo"]
+    },
+    {
+      "nombre": "Historia",
+      "area": "Ciencias Sociales",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.15, 0.85, 0.50, 0.70, 0.50, 0.60],
+      "keywords": ["historia", "pasado", "civilizaciones", "documentos", "investigacion"],
+      "alias": ["historia", "historiador"]
+    },
+    {
+      "nombre": "Antropología",
+      "area": "Ciencias Sociales",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.30, 0.85, 0.55, 0.75, 0.50, 0.55],
+      "keywords": ["cultura", "sociedades", "antropologia", "investigacion", "humanos"],
+      "alias": ["antropologia", "antropologo"]
+    },
+    {
+      "nombre": "Arqueología",
+      "area": "Ciencias Sociales",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.60, 0.85, 0.50, 0.60, 0.45, 0.60],
+      "keywords": ["arqueologia", "ruinas", "fosiles", "historia", "excavacion"],
+      "alias": ["arqueologia", "arqueologo"]
+    },
+    {
+      "nombre": "Filosofía",
+      "area": "Humanidades",
+      "nivel": ["universitario"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.10, 0.95, 0.70, 0.70, 0.40, 0.50],
+      "keywords": ["filosofia", "pensamiento", "logica", "etica", "reflexion"],
+      "alias": ["filosofia", "filosofo"]
+    },
+    {
+      "nombre": "Derecho Criminalística",
+      "area": "Ciencias Sociales",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.40, 0.70, 0.30, 0.70, 0.80, 0.80],
+      "keywords": ["leyes", "abogado", "justicia", "tribunal", "juridico", "defender", "criminalistica"],
+      "alias": ["derecho", "abogado", "abogacia", "leyes", "criminalistica"]
+    },
+    {
+      "nombre": "PNP",
+      "area": "Seguridad",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.70, 0.50, 0.20, 0.70, 0.70, 0.80],
+      "keywords": ["policia", "seguridad", "orden", "pnp", "servicio"],
+      "alias": ["policia", "policia nacional", "pnp", "ser policia"]
+    },
+    {
+      "nombre": "Fuerzas Armadas",
+      "area": "Seguridad",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico"],
+      "perfil_riasec": [0.80, 0.50, 0.20, 0.60, 0.70, 0.70],
+      "keywords": ["militar", "ejercito", "marina", "fuerza aerea", "defensa"],
+      "alias": ["fuerzas armadas", "militar", "ejercito", "marina"]
+    },
+    {
+      "nombre": "Aviación",
+      "area": "Tecnología",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.85, 0.60, 0.20, 0.40, 0.50, 0.70],
+      "keywords": ["aviacion", "aviones", "piloto", "vuelo", "aereo"],
+      "alias": ["aviacion", "piloto aviador", "piloto"]
+    },
+    {
+      "nombre": "Auxiliar de Vuelo",
+      "area": "Servicios",
+      "nivel": ["tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.40, 0.50, 0.90, 0.60, 0.60],
+      "keywords": ["auxiliar", "vuelo", "avion", "tripulante", "servicio"],
+      "alias": ["auxiliar de vuelo", "aeromoza", "tripulante de cabina"]
+    },
+    {
+      "nombre": "Guía Oficial de Turismo",
+      "area": "Servicios",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.50, 0.50, 0.60, 0.85, 0.70, 0.60],
+      "keywords": ["turismo", "viajes", "guiar", "turistas", "cultura"],
+      "alias": ["guia oficial de turismo", "guia turistico", "turismo"]
+    },
+    {
+      "nombre": "Gastronomía",
+      "area": "Servicios",
+      "nivel": ["tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.75, 0.35, 0.80, 0.60, 0.60, 0.55],
+      "keywords": ["cocina", "chef", "cocinar", "restaurante", "alimentos", "recetas"],
+      "alias": ["gastronomia", "chef", "cocina", "cocinero"]
+    },
+    {
+      "nombre": "Gastronomía/Repostería",
+      "area": "Servicios",
+      "nivel": ["tecnico", "cetpro"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.75, 0.35, 0.80, 0.60, 0.60, 0.55],
+      "keywords": ["cocina", "reposteria", "pasteleria", "chef", "postres"],
+      "alias": ["gastronomia reposteria", "reposteria", "pasteleria", "repostero"]
+    },
+    {
+      "nombre": "Industria Alimentaria",
+      "area": "Tecnología",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.70, 0.75, 0.40, 0.40, 0.55, 0.70],
+      "keywords": ["alimentos", "produccion", "industria", "procesamiento"],
+      "alias": ["industria alimentaria", "alimentos"]
+    },
+    {
+      "nombre": "Ing de Industrias Alimentarias",
+      "area": "Ingeniería",
+      "nivel": ["universitario"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.75, 0.80, 0.35, 0.35, 0.55, 0.70],
+      "keywords": ["alimentos", "industria", "produccion", "procesos"],
+      "alias": ["ingenieria de industrias alimentarias", "ing industrias alimentarias"]
+    },
+    {
+      "nombre": "Cosmetología",
+      "area": "Servicios",
+      "nivel": ["cetpro", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.60, 0.30, 0.85, 0.80, 0.65, 0.50],
+      "keywords": ["cosmetologia", "belleza", "estetica", "maquillaje", "cuidado personal"],
+      "alias": ["cosmetologia", "cosmetologa", "belleza", "estetica"]
+    },
+    {
+      "nombre": "Soldadura Industrial",
+      "area": "Tecnología",
+      "nivel": ["cetpro", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.95, 0.50, 0.25, 0.30, 0.40, 0.60],
+      "keywords": ["soldadura", "soldar", "metales", "industrial", "taller"],
+      "alias": ["soldadura industrial", "soldadura", "soldador"]
+    },
+    {
+      "nombre": "Operador de Maquinarias Pesadas",
+      "area": "Tecnología",
+      "nivel": ["cetpro", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.95, 0.50, 0.20, 0.30, 0.40, 0.60],
+      "keywords": ["maquinaria", "excavadora", "operador", "construccion", "pesada"],
+      "alias": ["operador de maquinarias pesadas", "maquinaria pesada", "operador"]
+    },
+    {
+      "nombre": "Topografía",
+      "area": "Ingeniería",
+      "nivel": ["universitario", "tecnico"],
+      "institucion": ["publico", "privado"],
+      "perfil_riasec": [0.90, 0.70, 0.30, 0.35, 0.45, 0.65],
+      "keywords": ["topografia", "terreno", "medicion", "planos", "construccion"],
+      "alias": ["topografia", "topografo"]
+    }
+  ]
+}

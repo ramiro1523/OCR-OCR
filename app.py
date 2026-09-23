@@ -1,11 +1,16 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import html as _html
+import re
 import pandas as pd
 import difflib
 from pathlib import Path
 
+import templates as tpl
+import viz
+
 from vocacional.puntajes import calcular_pd
-from vocacional.baremos import calcular_baremos
+from vocacional.baremos import calcular_baremos, nivel_correspondencia
 from vocacional.areas import top_2, ranking_tipos
 from vocacional.carreras import (
     seleccionar_4_carreras,
@@ -16,6 +21,19 @@ from vocacional.carreras import (
     TIPOS_REL,
 )
 from vocacional.utils import generar_items_vacios, obtener_bloques, auditar_marcas
+
+# ─────────────────────────────────────────────────────────────
+# RECOMENDADOR SEMÁNTICO (opcional: si falla el import, todo
+# sigue funcionando con el sistema clásico)
+# ─────────────────────────────────────────────────────────────
+try:
+    from vocacional.recomendador import recomendar_carreras as _recomendar_semantico
+    _RECOMENDADOR_DISPONIBLE = True
+except Exception as _e_rec:
+    _recomendar_semantico = None
+    _RECOMENDADOR_DISPONIBLE = False
+    print(f"[AVISO] Recomendador semántico no disponible: {_e_rec}")
+
 
 # ─────────────────────────────────────────────────────────────
 # CONFIGURACIÓN GLOBAL
@@ -38,6 +56,105 @@ def cargar_css():
 
 
 cargar_css()
+
+
+# ─────────────────────────────────────────────────────────────
+# HELPER: RENDER HTML SIN MARKDOWN
+# ─────────────────────────────────────────────────────────────
+def render_html(html: str):
+    """Renderiza HTML sin pasar por el parser de markdown de Streamlit."""
+    if not html:
+        return
+    minificado = re.sub(r">\s+<", "><", html.strip())
+    if hasattr(st, "html"):
+        st.html(minificado)
+    else:
+        st.markdown(minificado, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────
+# ATAJO: ENTER PARA CONTINUAR
+# ─────────────────────────────────────────────────────────────
+def activar_enter():
+    components.html("""
+    <script>
+    (function() {
+        const doc = window.parent.document;
+        const handler = function(e) {
+            if (e.key !== 'Enter' || e.shiftKey) return;
+            const t = e.target;
+            if (t && t.tagName === 'TEXTAREA') return;
+            const btn = doc.querySelector('button[kind="primary"]');
+            if (btn) { e.preventDefault(); btn.click(); }
+        };
+        if (window._enterHandler) doc.removeEventListener('keydown', window._enterHandler);
+        window._enterHandler = handler;
+        doc.addEventListener('keydown', handler);
+    })();
+    </script>
+    """, height=0)
+
+
+# ─────────────────────────────────────────────────────────────
+# PRESERVAR SCROLL
+# ─────────────────────────────────────────────────────────────
+def preservar_scroll():
+    components.html("""
+    <script>
+    (function() {
+        const win = window.parent;
+        const doc = win.document;
+        const paso = doc.querySelector('.step.active')?.textContent || 'x';
+        const KEY = 'ieppo_scroll_' + paso.replace(/\\s+/g, '_');
+
+        if (!win._scrollListenerAttached) {
+            let timer = null;
+            win.addEventListener('scroll', function() {
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    try {
+                        const p = doc.querySelector('.step.active')?.textContent || 'x';
+                        const k = 'ieppo_scroll_' + p.replace(/\\s+/g, '_');
+                        sessionStorage.setItem(k, String(win.scrollY || 0));
+                    } catch(e) {}
+                }, 200);
+            }, { passive: true });
+            win._scrollListenerAttached = true;
+        }
+
+        if (!win._visibilityListenerAttached) {
+            win.addEventListener('focus', function() {
+                setTimeout(function() {
+                    try {
+                        const y = parseInt(sessionStorage.getItem(KEY) || '0', 10);
+                        if (y > 0) win.scrollTo({ top: y, behavior: 'instant' });
+                    } catch(e) {}
+                }, 50);
+            });
+            doc.addEventListener('visibilitychange', function() {
+                if (!doc.hidden) {
+                    setTimeout(function() {
+                        try {
+                            const p = doc.querySelector('.step.active')?.textContent || 'x';
+                            const k = 'ieppo_scroll_' + p.replace(/\\s+/g, '_');
+                            const y = parseInt(sessionStorage.getItem(k) || '0', 10);
+                            if (y > 0) win.scrollTo({ top: y, behavior: 'instant' });
+                        } catch(e) {}
+                    }, 50);
+                }
+            });
+            win._visibilityListenerAttached = true;
+        }
+
+        setTimeout(function() {
+            try {
+                const y = parseInt(sessionStorage.getItem(KEY) || '0', 10);
+                if (y > 0) win.scrollTo({ top: y, behavior: 'instant' });
+            } catch(e) {}
+        }, 120);
+    })();
+    </script>
+    """, height=0)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -83,7 +200,7 @@ def criterio_predominante(resumen: dict) -> str:
 
 
 # ─────────────────────────────────────────────────────────────
-# NIVELES E INSTITUCIONES
+# NIVELES EDUCATIVOS E INSTITUCIONES
 # ─────────────────────────────────────────────────────────────
 NIVELES = {
     "universitario": {"label": "Universitario",
@@ -98,9 +215,9 @@ NIVELES = {
 }
 
 INSTITUCIONES = {
-    "publica":     {"label": "Pública",      "chip": "inst-pub"},
-    "privada":     {"label": "Privada",      "chip": "inst-priv"},
-    "indiferente": {"label": "Indiferente",  "chip": ""},
+    "publica":     {"label": "Pública",     "chip": "inst-pub"},
+    "privada":     {"label": "Privada",     "chip": "inst-priv"},
+    "indiferente": {"label": "Indiferente", "chip": ""},
 }
 
 CARRERAS_CETPRO = {
@@ -128,7 +245,63 @@ def es_financiable(nivel_carrera: str, nivel_max: str) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────
-# CATÁLOGO PLANO Y FUZZY MATCH
+# MAPEO DE 7 TIPOS VOCACIONALES → PERFIL RIASEC (para el recomendador)
+# ─────────────────────────────────────────────────────────────
+_TIPO_A_RIASEC = {
+    "SOCIAL":             "S",
+    "LIDERAZGO":          "E",
+    "ARTÍSTICO":          "A",
+    "ORGANIZADO":         "C",
+    "EMPRENDEDOR":        "E",
+    "INVESTIGATIVO":      "I",
+    "TÉCNICO MECÁNICO":   "R",
+}
+
+
+def perfil_test_a_riasec(con_baremos: dict) -> dict:
+    """
+    Convierte el dict de baremos (7 tipos vocacionales) a un perfil
+    RIASEC (6 áreas, valores 0-1) que el recomendador semántico
+    puede consumir.
+
+    Mapeo:
+        SOCIAL              → S
+        LIDERAZGO           → E
+        ARTÍSTICO           → A
+        ORGANIZADO          → C
+        EMPRENDEDOR         → E
+        INVESTIGATIVO       → I
+        TÉCNICO MECÁNICO    → R
+
+    Si dos tipos mapean a la misma letra RIASEC (LIDERAZGO y
+    EMPRENDEDOR → E), se promedian sus baremos.
+    """
+    acumulado = {"R": 0.0, "I": 0.0, "A": 0.0, "S": 0.0, "E": 0.0, "C": 0.0}
+    conteo = {"R": 0, "I": 0, "A": 0, "S": 0, "E": 0, "C": 0}
+
+    for tipo, d in con_baremos.items():
+        baremo = d.get("Baremo")
+        if baremo is None:
+            continue
+        letra = _TIPO_A_RIASEC.get(tipo.upper())
+        if not letra:
+            continue
+        acumulado[letra] += float(baremo)
+        conteo[letra] += 1
+
+    perfil = {}
+    for letra in ("R", "I", "A", "S", "E", "C"):
+        if conteo[letra] > 0:
+            promedio = acumulado[letra] / conteo[letra]
+            # Los baremos van típicamente 0-99 → normalizo a 0-1
+            perfil[letra] = min(1.0, promedio / 99.0)
+        else:
+            perfil[letra] = 0.0
+    return perfil
+
+
+# ─────────────────────────────────────────────────────────────
+# CATÁLOGO Y FUZZY MATCH
 # ─────────────────────────────────────────────────────────────
 def catalogo_plano() -> list[str]:
     seen = set()
@@ -153,35 +326,92 @@ def normalizar_carrera(texto: str) -> str | None:
 
 
 # ─────────────────────────────────────────────────────────────
-# SISTEMA INTELIGENTE DE RECOMENDACIÓN
+# INTERPRETACIÓN SEMÁNTICA DE CARRERAS LIBRES
 # ─────────────────────────────────────────────────────────────
-# Pesos del sistema (todos ajustables en un solo lugar)
-W_VOC        = 1.0    # peso afinidad con Top 2 tipos
-W_PROP       = 2.5    # peso afinidad con propuestas del alumno  ← clave
-W_TEST       = 0.8    # peso afinidad con carreras del test
-BONUS_ALUMNO = 20     # bonus si la carrera está en la lista del alumno
-BONUS_TEST   = 5      # bonus si la carrera está en la lista del test
+def interpretar_carrera_libre(texto: str, perfil_riasec: dict) -> dict | None:
+    """
+    Usa el recomendador semántico para traducir un texto libre
+    ("corredor de motos") a una carrera del catálogo oficial
+    ("Mecánica Automotriz").
+
+    Devuelve None si:
+      - El recomendador no está disponible.
+      - No hubo matches razonables.
+      - La carrera interpretada no existe en el catálogo oficial
+        del test (porque el recomendador tiene su propio catálogo).
+      - El match es demasiado débil (< 0.30).
+
+    Devuelve un dict con:
+      - "carrera": nombre exacto en el catálogo oficial
+      - "match_usuario": similitud con el texto del alumno (0-1)
+      - "afinidad_test": afinidad con el perfil del test (0-1)
+      - "score_final": score combinado
+      - "alternativas": otras carreras sugeridas con score
+      - "texto_original": texto tal cual lo escribió el alumno
+    """
+    if not _RECOMENDADOR_DISPONIBLE or not texto or not texto.strip():
+        return None
+
+    try:
+        resultado = _recomendar_semantico(
+            perfil_test=perfil_riasec,
+            carreras_usuario=[texto],
+            top_k=5,
+        )
+    except Exception as e:
+        print(f"[recomendador] error: {e}")
+        return None
+
+    recomendaciones = resultado.get("recomendaciones", [])
+    if not recomendaciones:
+        return None
+
+    # Filtro los que matchean con el catálogo oficial del test
+    validos = []
+    for rec in recomendaciones:
+        nombre_oficial = normalizar_carrera(rec["nombre"])
+        if nombre_oficial and rec["match_usuario"] >= 0.30:
+            validos.append({
+                "carrera": nombre_oficial,
+                "match_usuario": rec["match_usuario"],
+                "afinidad_test": rec["afinidad_test"],
+                "score_final": rec["score_final"],
+            })
+
+    if not validos:
+        return None
+
+    return {
+        "carrera": validos[0]["carrera"],
+        "match_usuario": validos[0]["match_usuario"],
+        "afinidad_test": validos[0]["afinidad_test"],
+        "score_final": validos[0]["score_final"],
+        "alternativas": validos[1:],
+        "texto_original": texto.strip(),
+    }
 
 
-def _tipos(c: str) -> set:
-    return set(INDICE_TIPOS.get(c, []))
+# ─────────────────────────────────────────────────────────────
+# SISTEMA DE RECOMENDACIÓN (clásico)
+# ─────────────────────────────────────────────────────────────
+W_VOC        = 1.0
+W_PROP       = 2.5
+W_TEST       = 0.8
+BONUS_ALUMNO = 20
+BONUS_TEST   = 5
 
 
-def _grupos(c: str) -> set:
-    return {g["id"] for g in INDICE_GRUPOS.get(c, [])}
+def _tipos(c): return set(INDICE_TIPOS.get(c, []))
+def _grupos(c): return {g["id"] for g in INDICE_GRUPOS.get(c, [])}
+def _keywords(c): return set(PALABRAS.get(c, []))
 
 
-def _keywords(c: str) -> set:
-    return set(PALABRAS.get(c, []))
-
-
-def _score_vocacional(carrera: str, tipo1: str, tipo2: str) -> float:
-    """0-24: qué tan alineada está la carrera con los 2 tipos Top."""
+def _score_vocacional(carrera, tipo1, tipo2):
     tipos = _tipos(carrera)
     s = 0
     if tipo1 in tipos: s += 8
     if tipo2 in tipos: s += 8
-    if tipo1 in tipos and tipo2 in tipos: s += 4  # bonus por pertenecer a ambos
+    if tipo1 in tipos and tipo2 in tipos: s += 4
     for rel in TIPOS_REL.get(tipo1, []):
         if rel in tipos: s += 2
     for rel in TIPOS_REL.get(tipo2, []):
@@ -189,42 +419,29 @@ def _score_vocacional(carrera: str, tipo1: str, tipo2: str) -> float:
     return s
 
 
-def _similitud_con(a: str, b: str) -> float:
-    """Cuánto se parece `a` a `b`: grupos + keywords + tipos comunes."""
-    if a == b:
-        return 0.0  # no autoreforzar
+def _similitud_con(a, b):
+    if a == b: return 0.0
     s = 0
-    if _grupos(a) & _grupos(b):         s += 4
+    if _grupos(a) & _grupos(b): s += 4
     s += 2 * min(len(_keywords(a) & _keywords(b)), 3)
     s += 3 * len(_tipos(a) & _tipos(b))
     return s
 
 
-def _score_afinidad_lista(carrera: str, lista: list[str]) -> float:
-    """Promedio de similitud con las carreras de una lista."""
-    if not lista:
-        return 0.0
+def _score_afinidad_lista(carrera, lista):
+    if not lista: return 0.0
     otras = [c for c in lista if c != carrera]
-    if not otras:
-        return 0.0
+    if not otras: return 0.0
     return sum(_similitud_con(carrera, o) for o in otras) / len(otras)
 
 
 def _score_carrera(carrera, tipo1, tipo2, test_norm, alumno_norm):
-    """Puntaje compuesto de una candidata."""
     s_voc  = _score_vocacional(carrera, tipo1, tipo2)
     s_prop = _score_afinidad_lista(carrera, alumno_norm)
     s_test = _score_afinidad_lista(carrera, test_norm)
-
     b_alumno = BONUS_ALUMNO if carrera in alumno_norm else 0
     b_test   = BONUS_TEST   if carrera in test_norm   else 0
-
-    total = (s_voc  * W_VOC
-             + s_prop * W_PROP
-             + s_test * W_TEST
-             + b_alumno
-             + b_test)
-
+    total = s_voc * W_VOC + s_prop * W_PROP + s_test * W_TEST + b_alumno + b_test
     return {
         "carrera": carrera,
         "nivel":   nivel_de_carrera(carrera),
@@ -237,39 +454,60 @@ def _score_carrera(carrera, tipo1, tipo2, test_norm, alumno_norm):
     }
 
 
-def evaluar_propuesta(carreras_test, carreras_alumno, nivel_max, institucion, tipo1, tipo2):
+def evaluar_propuesta(
+    carreras_test,
+    carreras_alumno,
+    nivel_max,
+    institucion,
+    tipo1,
+    tipo2,
+    perfil_riasec=None,
+):
     """
-    Evalúa las 5 candidatas (2 test + 3 alumno) y devuelve 2 finales.
-    Universo = sólo las 5 candidatas (deduplicadas).
+    Evalúa la propuesta del estudiante.
+
+    Novedad: cuando una carrera libre no se encuentra por fuzzy
+    clásico, se intenta INTERPRETAR con el recomendador semántico
+    antes de descartarla. Las interpretaciones quedan registradas
+    en el resultado para mostrarlas en el informe.
     """
-    # 1. Normalizar alumno (fuzzy)
     alumno_norm, no_encontradas = [], []
+    interpretaciones = []      # log de traducciones semánticas
+
     for c in carreras_alumno:
         if not c or not c.strip():
             continue
+
+        # 1. Intento normal (exacto + fuzzy)
         n = normalizar_carrera(c)
         if n:
             alumno_norm.append(n)
+            continue
+
+        # 2. Fallback semántico
+        interp = None
+        if perfil_riasec is not None:
+            interp = interpretar_carrera_libre(c, perfil_riasec)
+
+        if interp:
+            alumno_norm.append(interp["carrera"])
+            interpretaciones.append(interp)
         else:
             no_encontradas.append(c.strip())
 
-    test_norm = [c["carrera"] for c in carreras_test]
+    # Deduplicar preservando orden
+    alumno_norm = list(dict.fromkeys(alumno_norm))
 
-    # 2. Universo = 5 candidatas deduplicadas
+    test_norm = [c["carrera"] for c in carreras_test]
     universo, seen = [], set()
     for c in test_norm + alumno_norm:
         if c not in seen:
             seen.add(c)
             universo.append(c)
 
-    # 3. Puntuar
     scored = [_score_carrera(c, tipo1, tipo2, test_norm, alumno_norm) for c in universo]
-
-    # 4. Filtrar por nivel financiable
     financiables = [s for s in scored if es_financiable(s["nivel"], nivel_max)]
     descartadas  = [s for s in scored if s not in financiables]
-
-    # 5. Ordenar y tomar 2
     financiables.sort(key=lambda x: x["score"], reverse=True)
     finales = financiables[:2]
     for i, f in enumerate(finales, 1):
@@ -278,6 +516,7 @@ def evaluar_propuesta(carreras_test, carreras_alumno, nivel_max, institucion, ti
     return {
         "finales": finales,
         "no_encontradas": no_encontradas,
+        "interpretaciones": interpretaciones,
         "descartadas_nivel": descartadas,
         "nivel_max": nivel_max,
         "institucion": institucion,
@@ -285,47 +524,23 @@ def evaluar_propuesta(carreras_test, carreras_alumno, nivel_max, institucion, ti
 
 
 # ─────────────────────────────────────────────────────────────
-# ESTADO DE SESIÓN
+# ESTADO
 # ─────────────────────────────────────────────────────────────
 def _init():
-    if "paso" not in st.session_state:
-        st.session_state.paso = 1
-    if "datos" not in st.session_state:
-        st.session_state.datos = {}
+    if "paso" not in st.session_state: st.session_state.paso = 1
+    if "datos" not in st.session_state: st.session_state.datos = {}
 
 
 _init()
 
 
-def ir_a_paso(n: int):
+def ir_a_paso(n):
     st.session_state.paso = n
     st.rerun()
 
 
-def _e(v) -> str:
-    return _html.escape(str(v if v is not None else "—"))
-
-
 # ─────────────────────────────────────────────────────────────
-# BARRA DE PROGRESO
-# ─────────────────────────────────────────────────────────────
-def barra_progreso():
-    paso_actual = st.session_state.paso
-    labels = ["Subir", "Verificar", "Top 2", "Propuesta", "Resultado"]
-    clases = []
-    for i in range(1, 6):
-        if i < paso_actual:   clases.append("step done")
-        elif i == paso_actual: clases.append("step active")
-        else:                  clases.append("step")
-    html_bar = "<div class='step-bar'>" + "".join(
-        f"<div class='{c}'>{i} · {l}</div>"
-        for i, (c, l) in enumerate(zip(clases, labels), 1)
-    ) + "</div>"
-    st.markdown(html_bar, unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────────────────────
-# COMPONENTE: PANEL DE CRITERIOS
+# COMPONENTE: PANEL DE CRITERIOS (usa templates)
 # ─────────────────────────────────────────────────────────────
 def panel_criterios(con_baremos: dict):
     if not con_baremos:
@@ -333,46 +548,28 @@ def panel_criterios(con_baremos: dict):
     resumen = resumen_criterios(con_baremos)
     pred = criterio_predominante(resumen)
 
-    st.markdown("<div class='section-title'>Criterios vocacionales (P · E · H)</div>",
-                unsafe_allow_html=True)
+    render_html(tpl.section_title("Criterios vocacionales (P · E · H)"))
 
     cols = st.columns(3, gap="medium")
     for col, (letra, meta) in zip(cols, CRITERIOS.items()):
-        r = resumen[letra]
-        es_pred = (letra == pred)
-        corona = "<span class='crit-tag'>Predominante</span>" if es_pred else ""
         with col:
-            st.markdown(f"""
-            <div class="crit-card {'pred' if es_pred else ''}"
-                 style="border-top-color:{meta['color']};">
-                <div class="crit-head">
-                    <div class="crit-letter" style="background:{meta['color']};">{letra}</div>
-                    <div>
-                        <div class="crit-nombre">{meta['nombre']}</div>
-                        <div class="crit-desc">{meta['descripcion']}</div>
-                    </div>
-                </div>
-                <div class="crit-stats">
-                    <div><span class="crit-k">Baremo máx</span>
-                         <span class="crit-v">{r['baremo_max']}</span></div>
-                    <div><span class="crit-k">PD total</span>
-                         <span class="crit-v">{r['pd_total']}</span></div>
-                </div>
-                <div class="crit-tipos">
-                    {''.join(f"<span class='crit-chip'>{_e(t)}</span>" for t in r['tipos'])}
-                </div>
-                {corona}
-            </div>
-            """, unsafe_allow_html=True)
+            render_html(tpl.crit_card(letra, meta, resumen[letra], letra == pred))
+
+
+# ─────────────────────────────────────────────────────────────
+# MAPEO DE MARCA A SÍ/NO
+# ─────────────────────────────────────────────────────────────
+def normalizar_marca(valor: str) -> str:
+    return "si" if valor in ("si", "ambos") else "no"
 
 
 # ─────────────────────────────────────────────────────────────
 # PASO 1 — SUBIR
 # ─────────────────────────────────────────────────────────────
 def paso_1():
-    barra_progreso()
+    render_html(tpl.barra_progreso(1))
     st.title("IEPPO — Orientación Vocacional")
-    st.caption("Sistema de evaluación vocacional · Paso 1 de 5")
+    st.caption("Sistema de evaluación vocacional · Paso 1 de 6  ·  Presiona Enter para continuar")
     st.markdown("### Sube el formulario del estudiante")
 
     c1, c2 = st.columns([2, 1], gap="large")
@@ -387,19 +584,18 @@ def paso_1():
 
     st.markdown("### Datos del estudiante")
     n1, n2, n3 = st.columns(3, gap="medium")
-    with n1:
-        nombre = st.text_input("Nombre(s)", placeholder="Ej. María Fernanda")
-    with n2:
-        apellido_paterno = st.text_input("Apellido paterno", placeholder="Ej. García")
-    with n3:
-        apellido_materno = st.text_input("Apellido materno", placeholder="Ej. López")
+    with n1: nombre = st.text_input("Nombre(s)", placeholder="Ej. María Fernanda")
+    with n2: apellido_paterno = st.text_input("Apellido paterno", placeholder="Ej. García")
+    with n3: apellido_materno = st.text_input("Apellido materno", placeholder="Ej. López")
 
     nombre_completo = " ".join(
         p for p in [nombre.strip(), apellido_paterno.strip(), apellido_materno.strip()] if p
     )
 
     st.divider()
-    _, btn_col = st.columns([4, 1])
+    retro_col, _, btn_col = st.columns([1, 3, 1])
+    with retro_col:
+        st.button("← Retroceder", use_container_width=True, disabled=True)
     with btn_col:
         if st.button("Siguiente →", type="primary", use_container_width=True):
             if not pdf:
@@ -441,24 +637,26 @@ def paso_1():
             }
             ir_a_paso(2)
 
+    activar_enter()
+
 
 # ─────────────────────────────────────────────────────────────
 # PASO 2 — VERIFICAR
 # ─────────────────────────────────────────────────────────────
 def paso_2():
-    barra_progreso()
-    st.title("Paso 2: Verificar marcas y puntajes")
-    st.caption("Revisa cada bloque por pestañas. Solo los ítems dudosos aparecen resaltados.")
+    render_html(tpl.barra_progreso(2))
+    st.title("Paso 2: Verificar marcas")
+    st.caption("Revisa cada bloque por pestañas. Marca 'Sí' donde el estudiante haya marcado.")
 
     marcas  = st.session_state.datos["marcas"]
     sexo    = st.session_state.datos["sexo"]
     dudosos = set(st.session_state.datos.get("dudosos", []))
 
-    OPCIONES_TEXTO = ["Vacío", "No", "Sí", "Ambos"]
-    OPCIONES_VALOR = ["vacio", "no", "si", "ambos"]
+    OPCIONES_TEXTO = ["No", "Sí"]
+    OPCIONES_VALOR = ["no", "si"]
     N_COLS = 3
 
-    col_items, col_pts = st.columns([3, 1.2], gap="large")
+    col_items, col_pts = st.columns([3, 1.4], gap="large")
 
     with col_items:
         st.markdown("### Lista de ítems")
@@ -479,18 +677,22 @@ def paso_2():
                 grid = st.columns(N_COLS, gap="small")
                 for i, item in enumerate(items):
                     col_idx = min(i // per_col, N_COLS - 1)
-                    actual = marcas.get(item, "vacio")
-                    opt_idx = OPCIONES_VALOR.index(actual) if actual in OPCIONES_VALOR else 0
+
+                    actual = normalizar_marca(marcas.get(item, "vacio"))
+                    opt_idx = OPCIONES_VALOR.index(actual)
                     es_dudoso = item in dudosos
-                    badge = "<span class='mini-badge'>Revisar</span>" if es_dudoso else ""
-                    title_cls = "item-title dudoso" if es_dudoso else "item-title"
+
                     with grid[col_idx]:
                         with st.container(border=True):
-                            st.markdown(f"<div class='{title_cls}'>{_e(item)}{badge}</div>",
-                                        unsafe_allow_html=True)
-                            nuevo = st.radio(label=item, options=OPCIONES_TEXTO,
-                                             index=opt_idx, horizontal=True,
-                                             key=f"r_{item}", label_visibility="collapsed")
+                            render_html(tpl.item_title(item, es_dudoso))
+                            nuevo = st.radio(
+                                label=item,
+                                options=OPCIONES_TEXTO,
+                                index=opt_idx,
+                                horizontal=True,
+                                key=f"r_{item}",
+                                label_visibility="collapsed"
+                            )
                         nuevas_marcas[item] = OPCIONES_VALOR[OPCIONES_TEXTO.index(nuevo)]
 
     st.session_state.datos["marcas"] = nuevas_marcas
@@ -498,6 +700,7 @@ def paso_2():
     with col_pts:
         st.markdown("### Resumen")
         st.caption("Se actualiza automáticamente.")
+
         puntajes = calcular_pd(nuevas_marcas)
         con_baremos = calcular_baremos(puntajes, sexo)
         st.session_state.datos["puntajes"] = con_baremos
@@ -505,34 +708,35 @@ def paso_2():
         filas = []
         for tipo, datos in con_baremos.items():
             baremo = datos["Baremo"]
-            filas.append({"Tipo": tipo, "Crit": tipo_a_criterio(tipo),
-                          "PD": datos["PD"],
-                          "Baremo": baremo if baremo is not None else None})
+            filas.append({
+                "Tipo": tipo,
+                "Crit": tipo_a_criterio(tipo),
+                "PD": datos["PD"],
+                "Baremo": baremo if baremo is not None else None,
+            })
+
         df = pd.DataFrame(filas).sort_values("Baremo", ascending=False, na_position="last")
         df["Baremo"] = df["Baremo"].apply(lambda v: v if v is not None else "—")
         st.dataframe(df, hide_index=True, use_container_width=True, height=280)
 
-        audit = auditar_marcas(nuevas_marcas)
-        if audit["vacios"]:
-            st.caption(f"{len(audit['vacios'])} ítem(s) sin marcar.")
-        if audit["ambos"]:
-            st.caption(f"{len(audit['ambos'])} ítem(s) con doble marca.")
+        n_si = sum(1 for v in nuevas_marcas.values() if v == "si")
+        st.caption(f"{n_si} ítem(s) marcados como Sí de {len(nuevas_marcas)}.")
 
     st.divider()
     retro_col, _, conf_col = st.columns([1, 4, 1])
     with retro_col:
-        if st.button("← Retroceder", use_container_width=True):
-            ir_a_paso(1)
+        if st.button("← Retroceder", use_container_width=True): ir_a_paso(1)
     with conf_col:
-        if st.button("Confirmar →", type="primary", use_container_width=True):
-            ir_a_paso(3)
+        if st.button("Confirmar →", type="primary", use_container_width=True): ir_a_paso(3)
+
+    activar_enter()
 
 
 # ─────────────────────────────────────────────────────────────
-# PASO 3 — TOP 2 + CARRERAS AFINES
+# PASO 3 — TOP 2
 # ─────────────────────────────────────────────────────────────
 def paso_3():
-    barra_progreso()
+    render_html(tpl.barra_progreso(3))
     st.title("Paso 3: Top 2 vocacional y carreras afines")
     st.caption("Selección de carreras en base a los dos tipos con mayor baremo.")
 
@@ -552,68 +756,43 @@ def paso_3():
 
     panel_criterios(con_baremos)
 
-    st.markdown("<div class='section-title'>Top 2 tipos vocacionales</div>",
-                unsafe_allow_html=True)
+    render_html(tpl.section_title("Top 2 tipos vocacionales"))
     c1, c2 = st.columns(2, gap="large")
     with c1:
-        st.markdown(f"""
-        <div class="voc-card gold">
-            <div class="voc-rank">Puesto 1 · Criterio {tipo_a_criterio(tipo1)}</div>
-            <div class="voc-tipo">{_e(tipo1)}</div>
-            <div class="voc-stats">
-                <span>PD: <b>{top[0]['PD']}</b></span>
-                <span>Baremo: <b>{top[0]['Baremo'] if top[0]['Baremo'] is not None else '—'}</b></span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        render_html(tpl.voc_card(tipo1, top[0]["Baremo"], top[0]["PD"],
+                                 tipo_a_criterio(tipo1), 1))
     with c2:
-        st.markdown(f"""
-        <div class="voc-card silver">
-            <div class="voc-rank">Puesto 2 · Criterio {tipo_a_criterio(tipo2)}</div>
-            <div class="voc-tipo">{_e(tipo2)}</div>
-            <div class="voc-stats">
-                <span>PD: <b>{top[1]['PD']}</b></span>
-                <span>Baremo: <b>{top[1]['Baremo'] if top[1]['Baremo'] is not None else '—'}</b></span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        render_html(tpl.voc_card(tipo2, top[1]["Baremo"], top[1]["PD"],
+                                 tipo_a_criterio(tipo2), 2))
 
     carreras = seleccionar_4_carreras(tipo1, tipo2)
     st.session_state.datos["carreras"] = carreras
     st.session_state.datos["top"] = top
 
-    st.markdown("<div class='section-title'>Carreras sugeridas por el test</div>",
-                unsafe_allow_html=True)
+    render_html(tpl.section_title("Carreras sugeridas por el test"))
     ca_col, re_col = st.columns(2, gap="large")
     with ca_col:
         st.markdown("**Carreras principales**")
         for c in carreras["principales"]:
-            st.markdown(f"""
-            <div class="career-card principal">
-                <div class="career-badge">Principal · {tipo_a_criterio(c['tipo'])}</div>
-                <div class="career-name">{_e(c['carrera'])}</div>
-                <div class="career-tipo">{_e(c['tipo'])}</div>
-                <div class="career-rel">{_e(c.get('relacion', ''))}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            render_html(tpl.career_card(c["carrera"], c["tipo"],
+                                        c.get("relacion", ""),
+                                        tipo_a_criterio(c["tipo"]), "principal"))
     with re_col:
         st.markdown("**Carreras de respaldo**")
         for c in carreras["respaldo"]:
-            st.markdown(f"""
-            <div class="career-card respaldo">
-                <div class="career-badge">Respaldo · {tipo_a_criterio(c['tipo'])}</div>
-                <div class="career-name">{_e(c['carrera'])}</div>
-                <div class="career-tipo">{_e(c['tipo'])}</div>
-                <div class="career-rel">{_e(c.get('relacion', ''))}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            render_html(tpl.career_card(c["carrera"], c["tipo"],
+                                        c.get("relacion", ""),
+                                        tipo_a_criterio(c["tipo"]), "respaldo"))
 
     with st.expander("Ver ranking completo de los 7 tipos"):
         ranking = ranking_tipos(con_baremos)
         df_ranking = pd.DataFrame([
-            {"#": r["posicion"], "Criterio": tipo_a_criterio(r["tipo"]),
-             "Tipo Vocacional": r["tipo"], "PD": r["PD"],
-             "Baremo": r["Baremo"] if r["Baremo"] is not None else "—"}
+            {"#": r["posicion"],
+             "Criterio": tipo_a_criterio(r["tipo"]),
+             "Tipo Vocacional": r["tipo"],
+             "PD": r["PD"],
+             "Baremo": r["Baremo"] if r["Baremo"] is not None else "—",
+             "Nivel": tpl.NIVEL_LABEL[nivel_correspondencia(r["Baremo"])]}
             for r in ranking
         ])
         st.dataframe(df_ranking, hide_index=True, use_container_width=True)
@@ -625,18 +804,21 @@ def paso_3():
     with conf_col:
         if st.button("Continuar →", type="primary", use_container_width=True): ir_a_paso(4)
 
+    activar_enter()
+
 
 # ─────────────────────────────────────────────────────────────
-# PASO 4 — PROPUESTA DEL ESTUDIANTE
+# PASO 4 — PROPUESTA (con interpretación semántica en vivo)
 # ─────────────────────────────────────────────────────────────
 def paso_4():
-    barra_progreso()
+    render_html(tpl.barra_progreso(4))
     st.title("Paso 4: Propuesta del estudiante")
-    st.caption("El estudiante propone 3 carreras. El sistema las combina con las del test.")
+    st.caption("El estudiante propone 3 carreras. Presiona Enter para evaluar.")
 
     datos = st.session_state.datos
     top = datos.get("top", [])
     carreras_test = datos.get("carreras", {"principales": [], "respaldo": []})
+    con_baremos = datos.get("puntajes", {})
     tipo1 = top[0]["tipo"] if len(top) > 0 else ""
     tipo2 = top[1]["tipo"] if len(top) > 1 else ""
 
@@ -645,38 +827,25 @@ def paso_4():
         if st.button("← Retroceder"): ir_a_paso(3)
         return
 
-    # Las 2 carreras del test
-    st.markdown("<div class='section-title'>Carreras sugeridas por el test</div>",
-                unsafe_allow_html=True)
+    # Perfil RIASEC cacheado en session_state (evita recalcular en cada rerun)
+    if "_perfil_riasec" not in st.session_state.datos:
+        st.session_state.datos["_perfil_riasec"] = perfil_test_a_riasec(con_baremos)
+    perfil_riasec = st.session_state.datos["_perfil_riasec"]
+
+    render_html(tpl.section_title("Carreras sugeridas por el test"))
     principales = carreras_test.get("principales", [])
     for i, c in enumerate(principales, 1):
-        st.markdown(f"""
-        <div class="proposal-row">
-            <div class="proposal-num">{i}</div>
-            <div class="proposal-carrera">{_e(c['carrera'])}</div>
-            <div class="proposal-origen test">Test</div>
-        </div>
-        """, unsafe_allow_html=True)
+        render_html(tpl.proposal_row(i, c["carrera"], "test"))
 
-    # Formulario
-    st.markdown("<div class='section-title'>Carreras propuestas por el estudiante</div>",
-                unsafe_allow_html=True)
-    st.markdown("""
-    <div class="proposal-box">
-        <h4>Ingresa 3 carreras de interés</h4>
-        <p>Escribe los nombres tal como los conozcas. El sistema los emparejará
-        con el catálogo y evaluará su afinidad con el test y entre ellas.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    render_html(tpl.section_title("Carreras propuestas por el estudiante"))
+    render_html(tpl.proposal_box())
 
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1: prop1 = st.text_input("Carrera 1", placeholder="Ej. Agronomía", key="prop1")
     with c2: prop2 = st.text_input("Carrera 2", placeholder="Ej. Ing de Sistemas", key="prop2")
     with c3: prop3 = st.text_input("Carrera 3", placeholder="Ej. Biología", key="prop3")
 
-    # Nivel
-    st.markdown("<div class='section-title'>Nivel educativo que puede financiar</div>",
-                unsafe_allow_html=True)
+    render_html(tpl.section_title("Nivel educativo que puede financiar"))
     nivel_max = st.radio(
         "Nivel máximo",
         options=list(NIVELES.keys()),
@@ -684,9 +853,7 @@ def paso_4():
         horizontal=False, key="nivel_max", label_visibility="collapsed"
     )
 
-    # Institución
-    st.markdown("<div class='section-title'>Tipo de institución preferida</div>",
-                unsafe_allow_html=True)
+    render_html(tpl.section_title("Tipo de institución preferida"))
     institucion = st.radio(
         "Institución",
         options=list(INSTITUCIONES.keys()),
@@ -694,30 +861,49 @@ def paso_4():
         horizontal=True, key="institucion", label_visibility="collapsed"
     )
 
-    # Preview de las candidatas
+    # ── INTERPRETACIÓN SEMÁNTICA EN VIVO ─────────────────────
     carreras_alumno = [prop1, prop2, prop3]
     validas = [c for c in carreras_alumno if c and c.strip()]
+
     if validas:
-        st.markdown("<div class='section-title'>Candidatas a evaluar</div>",
-                    unsafe_allow_html=True)
+        render_html(tpl.section_title("Candidatas a evaluar"))
         for c in principales:
-            st.markdown(f"""
-            <div class="proposal-row">
-                <div class="proposal-num">•</div>
-                <div class="proposal-carrera">{_e(c['carrera'])}</div>
-                <div class="proposal-origen test">Test</div>
-            </div>
-            """, unsafe_allow_html=True)
+            render_html(tpl.proposal_row("•", c["carrera"], "test"))
+
+        # Acumulo interpretaciones para mostrarlas
+        interpretaciones_vivo = []
+
         for c in validas:
             norm = normalizar_carrera(c)
-            texto = norm if norm else f"{c} (no encontrada en catálogo)"
-            st.markdown(f"""
-            <div class="proposal-row">
-                <div class="proposal-num">•</div>
-                <div class="proposal-carrera">{_e(texto)}</div>
-                <div class="proposal-origen alumno">Alumno</div>
-            </div>
-            """, unsafe_allow_html=True)
+            if norm:
+                render_html(tpl.proposal_row("•", norm, "alumno"))
+            else:
+                # Intento semántico
+                if _RECOMENDADOR_DISPONIBLE:
+                    interp = interpretar_carrera_libre(c, perfil_riasec)
+                    if interp:
+                        interpretaciones_vivo.append(interp)
+                        texto = (
+                            f"{c} → interpretada como "
+                            f"<b>{interp['carrera']}</b> "
+                            f"(match {int(interp['match_usuario']*100)}%)"
+                        )
+                        render_html(tpl.proposal_row("•", texto, "alumno",es_html=True))
+                    else:
+                        render_html(tpl.proposal_row(
+                            "•", f"{c} (no encontrada en catálogo)", "alumno"
+                        ))
+                else:
+                    render_html(tpl.proposal_row(
+                        "•", f"{c} (no encontrada en catálogo)", "alumno"
+                    ))
+
+        if interpretaciones_vivo:
+            st.info(
+                f"🧠 El sistema interpretó {len(interpretaciones_vivo)} "
+                f"carrera(s) que no estaban en el catálogo. "
+                f"Verás el detalle en el informe final."
+            )
 
     st.divider()
     retro_col, _, conf_col = st.columns([1, 4, 1])
@@ -736,6 +922,7 @@ def paso_4():
                 institucion=institucion,
                 tipo1=tipo1,
                 tipo2=tipo2,
+                perfil_riasec=perfil_riasec,   # ← nuevo
             )
             st.session_state.datos["propuesta"] = {
                 "carreras_alumno": carreras_alumno,
@@ -745,94 +932,84 @@ def paso_4():
             }
             ir_a_paso(5)
 
+    activar_enter()
+
 
 # ─────────────────────────────────────────────────────────────
-# PASO 5 — RESULTADO FINAL
+# PASO 5 — CARRERAS FINALES
 # ─────────────────────────────────────────────────────────────
 def paso_5():
-    barra_progreso()
-    st.title("Paso 5: Resultado final")
-    st.caption("Recomendación final: síntesis del test y la propuesta del estudiante.")
+    render_html(tpl.barra_progreso(5))
+    st.title("Paso 5: Carreras finales recomendadas")
+    st.caption("Síntesis del test vocacional y la propuesta del estudiante.")
 
     datos = st.session_state.datos
-    nombre    = datos.get("nombre", "")
-    ap_pat    = datos.get("apellido_paterno", "")
-    ap_mat    = datos.get("apellido_materno", "")
+    nombre = datos.get("nombre", "")
+    ap_pat = datos.get("apellido_paterno", "")
+    ap_mat = datos.get("apellido_materno", "")
     nombre_completo = datos.get("nombre_completo") or f"{nombre} {ap_pat} {ap_mat}".strip()
-    sexo      = datos.get("sexo", "—")
-    top       = datos.get("top", [])
-    carreras  = datos.get("carreras", {"principales": [], "respaldo": []})
-    con_baremos = datos.get("puntajes", {})
+    sexo = datos.get("sexo", "—")
     propuesta = datos.get("propuesta", {})
 
     sexo_label = "Mujer (F)" if sexo == "F" else "Varón (M)"
     inicial = (nombre.strip()[:1] or "?").upper()
 
-    st.markdown(f"""
-    <div class="student-header">
-        <div class="student-avatar">{_e(inicial)}</div>
-        <div>
-            <div class="student-name">{_e(nombre_completo)}</div>
-            <div class="student-meta">Sexo: {_e(sexo_label)} · Evaluación IEPPO</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    render_html(tpl.student_header(inicial, nombre_completo, sexo_label))
 
-    if con_baremos:
-        panel_criterios(con_baremos)
-
-    # ─── Finales ───
     resultado = propuesta.get("resultado", {})
     finales   = resultado.get("finales", [])
     inst_key  = propuesta.get("institucion", "indiferente")
     inst_meta = INSTITUCIONES.get(inst_key, INSTITUCIONES["indiferente"])
 
     if finales:
-        st.markdown("<div class='section-title'>Carreras finales recomendadas</div>",
-                    unsafe_allow_html=True)
-
-        # Score máximo para normalizar la barra
+        render_html(tpl.section_title("Carreras finales recomendadas"))
         max_score = max(f["score"] for f in finales) or 1
 
         for f in finales:
             nivel_meta = NIVELES[f["nivel"]]
             afin_pct = min(int(f["score"] / max_score * 100), 100)
 
-            if f["en_test"] and f["en_alumno"]:
-                origen_txt = "Síntesis (test + alumno)"
-                origen_clase = "sintesis"
-            elif f["en_alumno"]:
-                origen_txt = "Propuesta del estudiante"
-                origen_clase = "alumno"
-            elif f["en_test"]:
-                origen_txt = "Sugerida por el test"
-                origen_clase = "test"
-            else:
-                origen_txt = "Síntesis"
-                origen_clase = "sintesis"
+            if f["en_test"] and f["en_alumno"]:   origen_txt = "Síntesis (test + alumno)"
+            elif f["en_alumno"]:                  origen_txt = "Propuesta del estudiante"
+            elif f["en_test"]:                    origen_txt = "Sugerida por el test"
+            else:                                 origen_txt = "Síntesis"
 
-            st.markdown(f"""
-            <div class="final-card">
-                <div class="rank">Puesto {f['rank']}</div>
-                <div class="name">{_e(f['carrera'])}</div>
-                <div class="meta">
-                    <span class="meta-chip {nivel_meta['chip']}">{nivel_meta['label']}</span>
-                    <span class="meta-chip {inst_meta['chip']}">{inst_meta['label']}</span>
-                    <span class="meta-chip">Score {f['score']}</span>
-                </div>
-                <div class="origen-line">Origen: <b>{origen_txt}</b></div>
-                <div class="score-bar">
-                    <div class="score-fill" style="width:{afin_pct}%;"></div>
-                </div>
-                <div class="score-detail">
-                    <span>Vocacional <b>{f['s_voc']}</b></span>
-                    <span>Afinidad personal <b>{f['s_prop']}</b></span>
-                    <span>Afinidad test <b>{f['s_test']}</b></span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            render_html(tpl.final_card(
+                carrera=f["carrera"], rank=f["rank"],
+                nivel_meta=nivel_meta, inst_meta=inst_meta,
+                score=f["score"], origen_txt=origen_txt, afin_pct=afin_pct,
+                s_voc=f["s_voc"], s_prop=f["s_prop"], s_test=f["s_test"],
+            ))
 
-    # ─── Advertencias ───
+    # ── INTERPRETACIONES SEMÁNTICAS ──────────────────────────
+    interps = resultado.get("interpretaciones", [])
+    if interps:
+        render_html(tpl.section_title("Interpretación de carreras libres"))
+        st.caption(
+            "Estas carreras no estaban en el catálogo tal como las "
+            "escribió el estudiante. El sistema las tradujo usando "
+            "el análisis semántico + el perfil del test."
+        )
+        for it in interps:
+            with st.container(border=True):
+                col_a, col_b = st.columns([1, 1])
+                with col_a:
+                    st.markdown(f"**Texto original:** `{it['texto_original']}`")
+                    st.markdown(f"**Interpretada como:** {it['carrera']}")
+                with col_b:
+                    st.metric("Similitud con el texto",
+                              f"{int(it['match_usuario']*100)}%")
+                    st.metric("Afinidad con el test",
+                              f"{int(it['afinidad_test']*100)}%")
+                if it.get("alternativas"):
+                    with st.expander("Otras interpretaciones posibles"):
+                        for alt in it["alternativas"]:
+                            st.caption(
+                                f"· {alt['carrera']} "
+                                f"(match {int(alt['match_usuario']*100)}%, "
+                                f"afinidad {int(alt['afinidad_test']*100)}%)"
+                            )
+
     no_enc = resultado.get("no_encontradas", [])
     if no_enc:
         st.warning("Carreras no encontradas en el catálogo (fueron ignoradas): "
@@ -845,104 +1022,246 @@ def paso_5():
                 st.caption(f"· {c['carrera']} — nivel {NIVELES[c['nivel']]['label']} "
                            f"· score {c['score']}")
 
-    # ─── Detalle colapsable ───
-    with st.expander("Ver Top 2, propuestas del alumno y sugerencias del test"):
-        col_top, col_prin, col_resp = st.columns(3, gap="large")
-        with col_top:
-            st.markdown("**Top vocacional**")
-            for i, t in enumerate(top[:2], 1):
-                cls = "gold" if i == 1 else "silver"
-                rank = "Puesto 1" if i == 1 else "Puesto 2"
-                bar = t["Baremo"] if t["Baremo"] is not None else "—"
-                st.markdown(f"""
-                <div class="voc-card {cls}">
-                    <div class="voc-rank">{rank} · Criterio {tipo_a_criterio(t['tipo'])}</div>
-                    <div class="voc-tipo">{_e(t['tipo'])}</div>
-                    <div class="voc-stats">
-                        <span>PD: <b>{t['PD']}</b></span>
-                        <span>Baremo: <b>{bar}</b></span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-        with col_prin:
-            st.markdown("**Principales (test)**")
-            for c in carreras.get("principales", []):
-                st.markdown(f"""
-                <div class="career-card principal">
-                    <div class="career-badge">Principal</div>
-                    <div class="career-name">{_e(c['carrera'])}</div>
-                    <div class="career-tipo">{_e(c['tipo'])}</div>
-                </div>
-                """, unsafe_allow_html=True)
-        with col_resp:
-            st.markdown("**Respaldo (test)**")
-            for c in carreras.get("respaldo", []):
-                st.markdown(f"""
-                <div class="career-card respaldo">
-                    <div class="career-badge">Respaldo</div>
-                    <div class="career-name">{_e(c['carrera'])}</div>
-                    <div class="career-tipo">{_e(c['tipo'])}</div>
-                </div>
-                """, unsafe_allow_html=True)
+    st.divider()
+    retro_col, _, conf_col = st.columns([1, 4, 1])
+    with retro_col:
+        if st.button("← Retroceder", use_container_width=True): ir_a_paso(4)
+    with conf_col:
+        if st.button("Ver informe final →", type="primary", use_container_width=True):
+            ir_a_paso(6)
 
-    # ─── Texto para copiar ───
-    nivel_label = NIVELES[propuesta.get("nivel_max", "universitario")]["label"]
-    inst_label  = INSTITUCIONES.get(propuesta.get("institucion", "indiferente"))["label"]
+    activar_enter()
 
-    lineas_finales = [
-        f"  {f['rank']}. {f['carrera']} — {NIVELES[f['nivel']]['label']} "
-        f"· {inst_label} · score {f['score']}"
-        for f in finales
-    ]
-    finales_txt = "\n".join(lineas_finales) if lineas_finales else "  —"
 
-    c_pr = [c.get("carrera", "—") for c in carreras.get("principales", [])]
-    c_re = [c.get("carrera", "—") for c in carreras.get("respaldo", [])]
+# ─────────────────────────────────────────────────────────────
+# PASO 6 — INFORME FINAL
+# ─────────────────────────────────────────────────────────────
+def paso_6():
+    render_html(tpl.barra_progreso(6))
+    st.title("Paso 6: Informe final")
+    st.caption("Tipos vocacionales, carreras del test y carreras finales, todo con su nivel.")
 
-    texto_copia = f"""RESULTADO IEPPO — ORIENTACIÓN VOCACIONAL
-{'='*40}
+    datos = st.session_state.datos
+    nombre = datos.get("nombre", "")
+    ap_pat = datos.get("apellido_paterno", "")
+    ap_mat = datos.get("apellido_materno", "")
+    nombre_completo = datos.get("nombre_completo") or f"{nombre} {ap_pat} {ap_mat}".strip()
+    sexo = datos.get("sexo", "—")
+    con_baremos = datos.get("puntajes", {})
+    carreras_test = datos.get("carreras", {"principales": [], "respaldo": []})
+    propuesta = datos.get("propuesta", {})
+    resultado = propuesta.get("resultado", {})
+    finales = resultado.get("finales", [])
+
+    sexo_label = "Mujer (F)" if sexo == "F" else "Varón (M)"
+
+    if not con_baremos:
+        st.error("No hay puntajes calculados. Regresa al Paso 2.")
+        if st.button("← Retroceder"): ir_a_paso(5)
+        return
+
+    render_html(tpl.hero_informe(nombre_completo, sexo_label))
+    render_html(tpl.leyenda_informe())
+
+    # ─────────────────────────────────────────────────────────
+    # SECCIÓN 0 — ANÁLISIS VISUAL
+    # ─────────────────────────────────────────────────────────
+    render_html(tpl.info_block(0, "Análisis visual",
+                               "Radar de tipos, distribución de baremos, gauge y comparación."))
+
+    col_r, col_b = st.columns(2, gap="medium")
+    with col_r:
+        render_html(tpl.viz_card("Perfil vocacional",
+                                 "Vista radial de los 7 tipos según su baremo."))
+        st.plotly_chart(viz.radar(con_baremos),
+                        use_container_width=True,
+                        config={"displayModeBar": False})
+    with col_b:
+        render_html(tpl.viz_card("Distribución de baremos",
+                                 "Ordenados por baremo. Líneas roja/verde = umbrales bajo/alto."))
+        st.plotly_chart(viz.barras_horizontales(con_baremos),
+                        use_container_width=True,
+                        config={"displayModeBar": False})
+
+    # Ordenar tipos por baremo descendente
+    items_tipos = []
+    for tipo, d in con_baremos.items():
+        baremo = d.get("Baremo")
+        items_tipos.append({
+            "tipo": tipo,
+            "crit": tipo_a_criterio(tipo),
+            "pd": d.get("PD", 0),
+            "baremo": baremo,
+            "nivel": nivel_correspondencia(baremo),
+        })
+    items_tipos.sort(key=lambda x: (x["baremo"] is None, -(x["baremo"] or 0)))
+
+    col_g, col_c = st.columns(2, gap="medium")
+    with col_g:
+        if items_tipos and items_tipos[0]["baremo"] is not None:
+            top1 = items_tipos[0]
+            render_html(tpl.viz_card("Tipo predominante",
+                                     "Baremo del tipo con mayor puntuación."))
+            st.plotly_chart(viz.gauge(top1["baremo"], top1["tipo"]),
+                            use_container_width=True,
+                            config={"displayModeBar": False})
+    with col_c:
+        render_html(tpl.comp_top2(items_tipos))
+
+    # ─────────────────────────────────────────────────────────
+    # SECCIÓN 1 — TIPOS
+    # ─────────────────────────────────────────────────────────
+    render_html(tpl.info_block(
+        1, "Tipos vocacionales",
+        "Los 7 tipos evaluados, ordenados por baremo descendente.",
+        tpl.tabla_tipos(items_tipos),
+    ))
+
+    # ─────────────────────────────────────────────────────────
+    # SECCIÓN 2 — CARRERAS DEL TEST
+    # ─────────────────────────────────────────────────────────
+    carreras_test_list = (
+        carreras_test.get("principales", []) + carreras_test.get("respaldo", [])
+    )
+    items_test = []
+    max_test = 1
+    if carreras_test_list:
+        scores_test = [c.get("puntaje", 10) for c in carreras_test_list]
+        max_test = max(scores_test) if scores_test else 1
+        for c in carreras_test_list:
+            items_test.append({
+                "carrera": c["carrera"],
+                "score": c.get("puntaje", 10),
+                "origen": "test",
+            })
+        render_html(tpl.info_block(
+            2, "Carreras sugeridas por el test",
+            "Las 2 principales y 2 de respaldo que surgieron del Top 2 vocacional.",
+            tpl.tabla_carreras(items_test, max_test),
+        ))
+    else:
+        render_html(tpl.empty_note("Sin carreras del test registradas."))
+
+    # ─────────────────────────────────────────────────────────
+    # SECCIÓN 3 — CARRERAS FINALES
+    # ─────────────────────────────────────────────────────────
+    items_finales = []
+    max_final = 1
+    if finales:
+        max_final = max(f["score"] for f in finales) or 1
+        for f in finales:
+            if f["en_test"] and f["en_alumno"]:   origen = "sintesis"
+            elif f["en_alumno"]:                  origen = "alumno"
+            elif f["en_test"]:                    origen = "test"
+            else:                                 origen = "sintesis"
+            items_finales.append({
+                "carrera": f["carrera"],
+                "score":   f["score"],
+                "origen":  origen,
+            })
+        render_html(tpl.info_block(
+            3, "Carreras finales recomendadas",
+            "Síntesis del test + las 3 carreras que propuso el estudiante.",
+            tpl.tabla_carreras(items_finales, max_final),
+        ))
+    else:
+        render_html(tpl.empty_note("Aún no se evaluaron las carreras finales. Vuelve al Paso 4."))
+
+    # ─────────────────────────────────────────────────────────
+    # SECCIÓN 4 — INTERPRETACIÓN SEMÁNTICA (nueva)
+    # ─────────────────────────────────────────────────────────
+    interps = resultado.get("interpretaciones", [])
+    if interps:
+        lineas_interp = []
+        for it in interps:
+            lineas_interp.append(
+                f"  · '{it['texto_original']}' → {it['carrera']} "
+                f"(match {int(it['match_usuario']*100)}%, "
+                f"afinidad test {int(it['afinidad_test']*100)}%)"
+            )
+        render_html(tpl.info_block(
+            4, "Interpretación de carreras libres",
+            "Carreras que el estudiante escribió coloquialmente y el "
+            "sistema tradujo al catálogo.",
+            "<pre>" + "\n".join(lineas_interp) + "</pre>",
+        ))
+
+    # ─────────────────────────────────────────────────────────
+    # RESUMEN GLOBAL
+    # ─────────────────────────────────────────────────────────
+    n_bajo  = sum(1 for i in items_tipos if i["nivel"] == "bajo")
+    n_medio = sum(1 for i in items_tipos if i["nivel"] == "medio")
+    n_alto  = sum(1 for i in items_tipos if i["nivel"] == "alto")
+    render_html(tpl.resumen_niveles(n_bajo, n_medio, n_alto))
+
+    if items_tipos and items_tipos[0]["nivel"] != "sin_dato":
+        top1 = items_tipos[0]
+        render_html(tpl.predominante_banner(
+            top1["tipo"], top1["crit"], top1["baremo"], top1["nivel"]
+        ))
+
+    # ─────────────────────────────────────────────────────────
+    # TEXTO COPIABLE
+    # ─────────────────────────────────────────────────────────
+    lineas_tipos = []
+    for i, it in enumerate(items_tipos, 1):
+        b = it["baremo"] if it["baremo"] is not None else "—"
+        lineas_tipos.append(
+            f"  {i}. {it['tipo']:20} Baremo {b:>4} · {tpl.NIVEL_LABEL[it['nivel']]}"
+        )
+    tipos_txt = "\n".join(lineas_tipos)
+
+    lineas_test = []
+    if items_test:
+        for i, it in enumerate(items_test, 1):
+            lvl = tpl.nivel_de_score(it["score"], max_test)
+            lineas_test.append(f"  {i}. {it['carrera']:30} Score {it['score']:>5} · {tpl.NIVEL_LABEL[lvl]}")
+    test_txt = "\n".join(lineas_test) if lineas_test else "  —"
+
+    lineas_final = []
+    if items_finales:
+        for i, it in enumerate(items_finales, 1):
+            lvl = tpl.nivel_de_score(it["score"], max_final)
+            lineas_final.append(f"  {i}. {it['carrera']:30} Score {it['score']:>5} · {tpl.NIVEL_LABEL[lvl]}")
+    final_txt = "\n".join(lineas_final) if lineas_final else "  —"
+
+    # Bloque de interpretaciones para copiar
+    interp_txt = ""
+    if interps:
+        lineas_interp_txt = []
+        for it in interps:
+            lineas_interp_txt.append(
+                f"  · '{it['texto_original']}' → {it['carrera']} "
+                f"(match {int(it['match_usuario']*100)}%)"
+            )
+        interp_txt = "\n\n4. INTERPRETACIÓN DE CARRERAS LIBRES:\n" + "\n".join(lineas_interp_txt)
+
+    texto_copia = f"""INFORME VOCACIONAL IEPPO
+{'='*50}
 Estudiante : {nombre_completo}
 Sexo       : {sexo_label}
 
-TOP 2 VOCACIONAL:
-  1. {top[0]['tipo'] if len(top) > 0 else '—'} (Baremo {top[0]['Baremo'] if len(top) > 0 else '—'}) [Criterio {tipo_a_criterio(top[0]['tipo']) if len(top) > 0 else '—'}]
-  2. {top[1]['tipo'] if len(top) > 1 else '—'} (Baremo {top[1]['Baremo'] if len(top) > 1 else '—'}) [Criterio {tipo_a_criterio(top[1]['tipo']) if len(top) > 1 else '—'}]
+1. TIPOS VOCACIONALES (por baremo):
+{tipos_txt}
 
-CARRERAS SUGERIDAS POR EL TEST:
-  1. {c_pr[0] if len(c_pr) > 0 else '—'}
-  2. {c_pr[1] if len(c_pr) > 1 else '—'}
+2. CARRERAS SUGERIDAS POR EL TEST:
+{test_txt}
 
-NIVEL FINANCIABLE : {nivel_label}
-INSTITUCIÓN       : {inst_label}
+3. CARRERAS FINALES RECOMENDADAS:
+{final_txt}{interp_txt}
 
-CARRERAS FINALES RECOMENDADAS:
-{finales_txt}
+Regla de niveles:
+  Tipos      → ≤40 Bajo · 41-59 Medio · ≥60 Alto
+  Carreras   → ≤40% Bajo · 50-79% Medio · ≥80% Alto (del máximo)
 """
 
-    st.markdown("<div class='section-title'>Copiar resultado</div>",
-                unsafe_allow_html=True)
+    render_html(tpl.section_title("Copiar informe"))
     st.code(texto_copia, language=None)
-
-    # ─── Guardar en BD ───
-    puntajes = datos.get("puntajes", {})
-    marcas   = datos.get("marcas", {})
-    if puntajes and marcas:
-        try:
-            from db.models import guardar_evaluacion
-            payload = dict(carreras)
-            payload["finales"]    = finales
-            payload["nivel_max"]  = propuesta.get("nivel_max")
-            payload["institucion"] = propuesta.get("institucion")
-            form_id = guardar_evaluacion(nombre_completo, sexo, marcas, puntajes, payload)
-            if form_id:
-                st.caption(f"Evaluación guardada en base de datos (ID: {form_id})")
-        except Exception:
-            pass
 
     st.divider()
     retro_col, _, nuevo_col = st.columns([1, 4, 1])
     with retro_col:
-        if st.button("← Retroceder", use_container_width=True): ir_a_paso(4)
+        if st.button("← Retroceder", use_container_width=True): ir_a_paso(5)
     with nuevo_col:
         if st.button("Nuevo estudiante", type="primary", use_container_width=True):
             st.session_state.paso = 1
@@ -951,7 +1270,9 @@ CARRERAS FINALES RECOMENDADAS:
 
 
 # ─────────────────────────────────────────────────────────────
-# ROUTER PRINCIPAL
+# ROUTER
 # ─────────────────────────────────────────────────────────────
-PASOS = {1: paso_1, 2: paso_2, 3: paso_3, 4: paso_4, 5: paso_5}
+PASOS = {1: paso_1, 2: paso_2, 3: paso_3, 4: paso_4, 5: paso_5, 6: paso_6}
 PASOS[st.session_state.paso]()
+
+preservar_scroll()
