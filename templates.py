@@ -191,17 +191,16 @@ def proposal_row(num, carrera: str, origen: str, es_html: bool = False) -> str:
         f"</div></div>"
     )
 
-
 def proposal_box() -> str:
     return (
         "<div class='proposal-box'>"
-        "<h4>Ingresa 3 carreras de interés</h4>"
-        "<p>Escribe los nombres tal como los conozcas. El sistema los "
-        "emparejará con el catálogo y evaluará su afinidad con el test "
-        "y entre ellas.</p>"
+        "<h4>Ingresa carreras de interés (opcional)</h4>"
+        "<p>Puedes escribir hasta 3 carreras tal como las conozcas. "
+        "Si no escribes ninguna, el sistema evaluará solo con las "
+        "carreras que sugirió el test. Los nombres se emparejarán "
+        "automáticamente con el catálogo.</p>"
         "</div>"
     )
-
 
 # ─────────────────────────────────────────────────────────────
 # FINAL CARD (paso 5)

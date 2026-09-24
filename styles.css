@@ -906,3 +906,280 @@ iframe[style*="height:0"] {
 .comp-diff.pos { background: #d1fae5; color: #065f46; }
 .comp-diff.neg { background: #fee2e2; color: #991b1b; }
 .comp-diff.eq  { background: var(--bg-soft); color: var(--text-soft); }
+
+/* ============================================================================
+   TEMA OSCURO — v2
+   Se activa añadiendo la clase `ieppo-oscuro` al <body> del documento padre.
+   Paleta profesional:
+     Fondo base      #0e1117
+     Superficies     #1a1c24 / #1e2027
+     Bordes          #2a2d36 / #3a3d47
+     Texto principal #f0f2f5
+     Texto muted     #a0a3ad
+     Acento          #4f8cff (azul profesional)
+     Acento fuerte   #ff4b4b (rojo CTA)
+   ============================================================================ */
+
+/* --- Base --- */
+body.ieppo-oscuro,
+body.ieppo-oscuro .stApp,
+body.ieppo-oscuro [data-testid="stAppViewContainer"],
+body.ieppo-oscuro section.main,
+body.ieppo-oscuro .main,
+body.ieppo-oscuro .block-container {
+    background-color: #0e1117 !important;
+    color: #f0f2f5 !important;
+}
+
+body.ieppo-oscuro [data-testid="stHeader"],
+body.ieppo-oscuro [data-testid="stToolbar"] {
+    background-color: #0e1117 !important;
+}
+
+body.ieppo-oscuro [data-testid="stSidebar"] {
+    background-color: #1a1c24 !important;
+}
+
+/* --- Texto global --- */
+body.ieppo-oscuro,
+body.ieppo-oscuro p,
+body.ieppo-oscuro span,
+body.ieppo-oscuro div,
+body.ieppo-oscuro h1,
+body.ieppo-oscuro h2,
+body.ieppo-oscuro h3,
+body.ieppo-oscuro h4,
+body.ieppo-oscuro h5,
+body.ieppo-oscuro h6,
+body.ieppo-oscuro label,
+body.ieppo-oscuro li,
+body.ieppo-oscuro td,
+body.ieppo-oscuro th,
+body.ieppo-oscuro a,
+body.ieppo-oscuro .stMarkdown,
+body.ieppo-oscuro .stMarkdown *,
+body.ieppo-oscuro [data-testid="stMarkdownContainer"],
+body.ieppo-oscuro [data-testid="stMarkdownContainer"] * {
+    color: #f0f2f5 !important;
+}
+
+body.ieppo-oscuro .stCaption,
+body.ieppo-oscuro [data-testid="stCaptionContainer"],
+body.ieppo-oscuro [data-testid="stCaptionContainer"] * {
+    color: #a0a3ad !important;
+}
+
+/* ------------------------------------------------------------------
+   BARRA DE PASOS (.step-bar / .step) — crítico para el modo oscuro
+   ------------------------------------------------------------------ */
+body.ieppo-oscuro .step-bar {
+    background-color: #1a1c24 !important;
+    border: 1px solid #2a2d36 !important;
+    box-shadow: none !important;
+}
+
+body.ieppo-oscuro .step {
+    background-color: transparent !important;
+    color: #8b8f99 !important;
+    border: none !important;
+}
+
+body.ieppo-oscuro .step.done {
+    background-color: #1e2027 !important;
+    color: #c5c8cf !important;
+}
+
+body.ieppo-oscuro .step.active {
+    background-color: #4f8cff !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(79, 140, 255, 0.35) !important;
+}
+
+body.ieppo-oscuro .step.done:hover,
+body.ieppo-oscuro .step.active:hover {
+    filter: brightness(1.08);
+}
+
+/* --- Inputs --- */
+body.ieppo-oscuro input,
+body.ieppo-oscuro textarea,
+body.ieppo-oscuro select,
+body.ieppo-oscuro [data-baseweb="input"],
+body.ieppo-oscuro [data-baseweb="input"] input,
+body.ieppo-oscuro [data-baseweb="textarea"] textarea,
+body.ieppo-oscuro [data-baseweb="select"] > div {
+    background-color: #1e2027 !important;
+    color: #f0f2f5 !important;
+    border-color: #2a2d36 !important;
+}
+
+body.ieppo-oscuro input::placeholder,
+body.ieppo-oscuro textarea::placeholder {
+    color: #7a7e88 !important;
+    opacity: 1 !important;
+}
+
+body.ieppo-oscuro [data-baseweb="input"]:focus-within,
+body.ieppo-oscuro [data-baseweb="textarea"]:focus-within {
+    border-color: #4f8cff !important;
+    box-shadow: 0 0 0 1px #4f8cff !important;
+}
+
+/* --- Radios --- */
+body.ieppo-oscuro [data-baseweb="radio"] label,
+body.ieppo-oscuro [data-baseweb="radio"] label *,
+body.ieppo-oscuro [role="radiogroup"] label,
+body.ieppo-oscuro [role="radiogroup"] label * {
+    color: #f0f2f5 !important;
+}
+
+/* --- Botones --- */
+body.ieppo-oscuro .stButton > button,
+body.ieppo-oscuro button[kind="secondary"] {
+    background-color: #262730 !important;
+    color: #f0f2f5 !important;
+    border: 1px solid #2a2d36 !important;
+}
+
+body.ieppo-oscuro .stButton > button:hover,
+body.ieppo-oscuro button[kind="secondary"]:hover {
+    background-color: #32353f !important;
+    border-color: #4f8cff !important;
+    color: #ffffff !important;
+}
+
+body.ieppo-oscuro button[kind="primary"] {
+    background-color: #ff4b4b !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(255, 75, 75, 0.3) !important;
+}
+
+body.ieppo-oscuro button[kind="primary"]:hover {
+    background-color: #ff6161 !important;
+}
+
+/* --- Tabs --- */
+body.ieppo-oscuro .stTabs [data-baseweb="tab-list"] {
+    background-color: #1a1c24 !important;
+    border-bottom: 1px solid #2a2d36 !important;
+}
+body.ieppo-oscuro .stTabs [data-baseweb="tab"] {
+    color: #8b8f99 !important;
+}
+body.ieppo-oscuro .stTabs [data-baseweb="tab"]:hover {
+    color: #c5c8cf !important;
+}
+body.ieppo-oscuro .stTabs [aria-selected="true"] {
+    color: #4f8cff !important;
+}
+
+/* --- Containers con borde --- */
+body.ieppo-oscuro [data-testid="stVerticalBlockBorderWrapper"],
+body.ieppo-oscuro [data-testid="stVerticalBlockBorderWrapper"] > div {
+    background-color: #1a1c24 !important;
+    border-color: #2a2d36 !important;
+}
+
+/* --- Bloques de código --- */
+body.ieppo-oscuro .stCode,
+body.ieppo-oscuro .stCodeBlock,
+body.ieppo-oscuro code,
+body.ieppo-oscuro pre {
+    background-color: #1e2027 !important;
+    color: #f0f2f5 !important;
+    border: 1px solid #2a2d36 !important;
+}
+
+/* --- Dataframe --- */
+body.ieppo-oscuro [data-testid="stDataFrame"],
+body.ieppo-oscuro [data-testid="stDataFrame"] * {
+    background-color: #1a1c24 !important;
+    color: #f0f2f5 !important;
+}
+
+/* --- Expander --- */
+body.ieppo-oscuro [data-testid="stExpander"],
+body.ieppo-oscuro [data-testid="stExpander"] > details,
+body.ieppo-oscuro [data-testid="stExpander"] summary,
+body.ieppo-oscuro [data-testid="stExpander"] summary * {
+    background-color: #1a1c24 !important;
+    color: #f0f2f5 !important;
+    border-color: #2a2d36 !important;
+}
+
+/* --- Alertas --- */
+body.ieppo-oscuro [data-testid="stAlert"] {
+    background-color: #1e2027 !important;
+    border-color: #2a2d36 !important;
+}
+body.ieppo-oscuro [data-testid="stAlert"] * {
+    color: #f0f2f5 !important;
+}
+
+/* --- Separadores --- */
+body.ieppo-oscuro hr,
+body.ieppo-oscuro [data-testid="stDivider"] {
+    border-color: #2a2d36 !important;
+    background-color: #2a2d36 !important;
+}
+
+/* --- File uploader --- */
+body.ieppo-oscuro [data-testid="stFileUploader"],
+body.ieppo-oscuro [data-testid="stFileUploader"] * {
+    color: #f0f2f5 !important;
+}
+body.ieppo-oscuro [data-testid="stFileUploader"] section {
+    background-color: #1a1c24 !important;
+    border-color: #2a2d36 !important;
+}
+body.ieppo-oscuro [data-testid="stFileUploader"] button {
+    background-color: #262730 !important;
+    color: #f0f2f5 !important;
+    border: 1px solid #2a2d36 !important;
+}
+
+/* --- Clases propias de templates.py --- */
+body.ieppo-oscuro .crit-card,
+body.ieppo-oscuro .voc-card,
+body.ieppo-oscuro .career-card,
+body.ieppo-oscuro .final-card,
+body.ieppo-oscuro .proposal-row,
+body.ieppo-oscuro .viz-card,
+body.ieppo-oscuro .info-block,
+body.ieppo-oscuro .informe-block,
+body.ieppo-oscuro .student-header,
+body.ieppo-oscuro .proposal-box,
+body.ieppo-oscuro .niveles-hero,
+body.ieppo-oscuro .predominante-banner,
+body.ieppo-oscuro .comp-row,
+body.ieppo-oscuro .niveles-summary .card {
+    background-color: #1a1c24 !important;
+    color: #f0f2f5 !important;
+    border-color: #2a2d36 !important;
+}
+
+body.ieppo-oscuro .section-title {
+    color: #4f8cff !important;
+}
+
+/* Items del paso 2 (label "N°", "Sí", "No") */
+body.ieppo-oscuro .item-title {
+    color: #f0f2f5 !important;
+}
+body.ieppo-oscuro .item-title.dudoso {
+    color: #ffb547 !important;
+}
+
+/* Texto de ayuda, placeholders pequeños */
+body.ieppo-oscuro small,
+body.ieppo-oscuro .st-emotion-cache-ue6h4q,
+body.ieppo-oscuro [data-testid="stWidgetLabel"] * {
+    color: #a0a3ad !important;
+}
+
+/* Marca de agua (Streamlit lo oculta por defecto pero por si acaso) */
+body.ieppo-oscuro [data-testid="stStatusWidget"] {
+    background-color: #1a1c24 !important;
+    color: #a0a3ad !important;
+}

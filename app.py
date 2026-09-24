@@ -9,6 +9,9 @@ from pathlib import Path
 import templates as tpl
 import viz
 
+from templates import e as _esc
+e = _esc
+
 from vocacional.puntajes import calcular_pd
 from vocacional.baremos import calcular_baremos, nivel_correspondencia
 from vocacional.areas import top_2, ranking_tipos
@@ -158,6 +161,323 @@ def preservar_scroll():
 
 
 # ─────────────────────────────────────────────────────────────
+# TEMA CLARO / OSCURO
+# ─────────────────────────────────────────────────────────────
+def _css_modo_oscuro() -> str:
+    """CSS que oscurece toda la app. Se inyecta con !important para
+    sobreescribir los estilos de Streamlit y de styles.css."""
+    return """
+    <style>
+    /* Fondos principales */
+    .stApp, [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] > .main {
+        background-color: #0e1117 !important;
+    }
+    [data-testid="stHeader"] {
+        background-color: rgba(14, 17, 23, 0.85) !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #1a1c24 !important;
+    }
+
+    /* Texto global */
+    [data-testid="stMarkdownContainer"] *,
+    [data-testid="stSidebar"] *,
+    h1, h2, h3, h4, h5, h6, p, span, label, li, td, th {
+        color: #fafafa !important;
+    }
+    .stCaption, [data-testid="stCaptionContainer"] {
+        color: #a0a3ad !important;
+    }
+
+    /* Inputs */
+    [data-baseweb="input"] input,
+    [data-baseweb="select"] > div,
+    [data-baseweb="textarea"] textarea {
+        background-color: #1e2027 !important;
+        color: #fafafa !important;
+        border-color: #3a3d47 !important;
+    }
+    [data-baseweb="radio"] label {
+        color: #fafafa !important;
+    }
+
+    /* Botones */
+    .stButton > button {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+        border: 1px solid #3a3d47 !important;
+    }
+    .stButton > button:hover {
+        background-color: #32353f !important;
+        border-color: #ff4b4b !important;
+    }
+    .stButton > button[kind="primary"] {
+        background-color: #ff4b4b !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #1a1c24 !important;
+        border-bottom-color: #3a3d47 !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #a0a3ad !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #ff4b4b !important;
+    }
+
+    /* Contenedores con borde (st.container(border=True)) */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #1a1c24 !important;
+        border-color: #3a3d47 !important;
+    }
+
+    /* Código */
+    .stCode, code, pre, .stCodeBlock {
+        background-color: #1e2027 !important;
+        color: #fafafa !important;
+        border: 1px solid #3a3d47 !important;
+    }
+
+    /* Dataframe */
+    [data-testid="stDataFrame"] {
+        background-color: #1a1c24 !important;
+    }
+    [data-testid="stDataFrame"] * {
+        color: #fafafa !important;
+    }
+
+    /* Expander */
+    [data-testid="stExpander"] {
+        background-color: #1a1c24 !important;
+        border-color: #3a3d47 !important;
+    }
+    [data-testid="stExpander"] summary {
+        color: #fafafa !important;
+    }
+
+    /* Alertas */
+    [data-testid="stAlert"] {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+        border-color: #3a3d47 !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: #3a3d47 !important;
+    }
+
+    /* Clases custom de templates.py */
+    .crit-card, .voc-card, .career-card, .final-card,
+    .proposal-row, .viz-card, .info-block, .informe-block,
+    .student-header, .proposal-box, .section-title,
+    .niveles-hero, .predominante-banner, .comp-row,
+    .niveles-summary .card {
+        background-color: #1a1c24 !important;
+        color: #fafafa !important;
+        border-color: #3a3d47 !important;
+    }
+    .section-title {
+        color: #ff4b4b !important;
+    }
+    </style>
+    """
+
+
+def _css_modo_claro() -> str:
+    """Reset a claro. Solo por si quedaron restos del modo oscuro."""
+    return """
+    <style>
+    .stApp, [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] > .main {
+        background-color: #ffffff !important;
+    }
+    [data-testid="stHeader"] {
+        background-color: rgba(255, 255, 255, 0.85) !important;
+    }
+    </style>
+    """
+
+
+# ─────────────────────────────────────────────────────────────
+# TEMA CLARO / OSCURO
+# ─────────────────────────────────────────────────────────────
+# El CSS del tema oscuro vive en styles.css scopeado bajo
+# `body.ieppo-oscuro`. Aquí solo añadimos/quitar esa clase al
+# <body> del documento padre vía JavaScript. Es liviano: no
+# re-inyecta CSS en cada rerun.
+# ─────────────────────────────────────────────────────────────
+
+def aplicar_tema():
+    """Añade o quita la clase `ieppo-oscuro` al <body> del padre."""
+    tema = st.session_state.get("tema", "claro")
+    activar = "true" if tema == "oscuro" else "false"
+
+    components.html(f"""
+    <script>
+    (function() {{
+        const body = window.parent.document.body;
+        if ({activar}) {{
+            body.classList.add('ieppo-oscuro');
+        }} else {{
+            body.classList.remove('ieppo-oscuro');
+        }}
+    }})();
+    </script>
+    """, height=0)
+
+
+def render_toggle_tema():
+    """Toggle de tema en la esquina superior derecha."""
+    col_a, col_b = st.columns([11, 1])
+    with col_b:
+        tema_actual = st.session_state.get("tema", "claro")
+        nuevo = st.toggle(
+            "🌙",
+            value=(tema_actual == "oscuro"),
+            key="_toggle_tema_widget",
+            help="Modo oscuro",
+        )
+        tema_nuevo = "oscuro" if nuevo else "claro"
+        if tema_nuevo != tema_actual:
+            st.session_state.tema = tema_nuevo
+            st.rerun()
+
+
+# ─────────────────────────────────────────────────────────────
+# VALIDACIÓN DE NOMBRES
+# ─────────────────────────────────────────────────────────────
+_PATRON_NOMBRE = re.compile(
+    r"^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+(?:[\s'\-][a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+)*$"
+)
+def _sanitizar_nombre(key: str):
+    """Elimina caracteres no permitidos del session_state tras cada
+    cambio. Fallback del JS."""
+    if key not in st.session_state:
+        return
+    v = st.session_state[key]
+    if isinstance(v, str):
+        limpio = re.sub(r"[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s'\-]", "", v)
+        if limpio != v:
+            st.session_state[key] = limpio
+
+
+def validar_nombre(texto: str, campo: str = "El campo") -> tuple:
+    """
+    Valida un nombre/apellido.
+
+    Reglas:
+      - No vacío.
+      - Entre 2 y 50 caracteres.
+      - Solo letras (incluye acentos y ñ).
+      - Permite espacios, apóstrofes y guiones como separadores,
+        pero NO al inicio, al final, ni dos seguidos.
+
+    Returns:
+        (es_valido, mensaje_error)
+    """
+    t = (texto or "").strip()
+
+    if not t:
+        return False, f"{campo} no puede estar vacío."
+    if len(t) < 2:
+        return False, f"{campo} debe tener al menos 2 letras."
+    if len(t) > 50:
+        return False, f"{campo} no puede tener más de 50 caracteres."
+    if not _PATRON_NOMBRE.match(t):
+        return False, (
+            f"{campo} solo puede contener letras, espacios, "
+            f"apóstrofes (') y guiones (-)."
+        )
+    return True, ""
+
+# ─────────────────────────────────────────────────────────────
+# BLOQUEO DE CARACTERES EN CAMPOS DE NOMBRE (frontend)
+# ─────────────────────────────────────────────────────────────
+def bloquear_caracteres_invalidos_en_nombres():
+    """
+    Bloquea números y símbolos en los campos de nombre/apellidos.
+    Usa `beforeinput` (más fiable que keydown) e identifica los inputs
+    por `aria-label` (atributo estándar que Streamlit siempre pone).
+    """
+    components.html("""
+    <script>
+    (function() {
+        const doc = window.parent.document;
+        const LABELS = ["Nombre(s)", "Apellido paterno", "Apellido materno"];
+        const INVALID = /[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\\s'\\-]/;
+
+        function attach(input, nombre) {
+            if (input._ieppoBound) return;
+            input._ieppoBound = true;
+            console.log('[IEPPO] Filtro aplicado a:', nombre);
+
+            // 1. Bloquear ANTES de insertar (cubre teclado, pegado,
+            //    arrastrar, autocompletar, IME)
+            input.addEventListener('beforeinput', function(e) {
+                if (e.data && INVALID.test(e.data)) {
+                    e.preventDefault();
+                }
+            });
+
+            // 2. Fallback para navegadores sin beforeinput
+            input.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.key.length !== 1) return;
+                if (INVALID.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            // 3. Pegado: limpiar el texto pegado
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const raw = (e.clipboardData || window.clipboardData).getData('text') || '';
+                const clean = raw.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\\s'\\-]/g, '');
+                if (clean) {
+                    document.execCommand('insertText', false, clean);
+                }
+            });
+
+            // 4. Bloquear drag-and-drop de texto
+            input.addEventListener('drop', function(e) { e.preventDefault(); });
+        }
+
+        function scan() {
+            const inputs = doc.querySelectorAll(
+                'input[type="text"], input:not([type]), input[type=""]'
+            );
+            inputs.forEach(function(input) {
+                const ariaLabel = (input.getAttribute('aria-label') || '').trim();
+                for (const label of LABELS) {
+                    if (ariaLabel === label || ariaLabel.indexOf(label) !== -1) {
+                        attach(input, ariaLabel);
+                        break;
+                    }
+                }
+            });
+        }
+
+        scan();
+
+        // Re-escanear cuando Streamlit re-renderiza
+        if (window._ieppoFilterObserver) {
+            window._ieppoFilterObserver.disconnect();
+        }
+        const observer = new MutationObserver(scan);
+        observer.observe(doc.body, { childList: true, subtree: true });
+        window._ieppoFilterObserver = observer;
+    })();
+    </script>
+    """, height=0)
+
+
+# ─────────────────────────────────────────────────────────────
 # CRITERIOS P / E / H
 # ─────────────────────────────────────────────────────────────
 CRITERIOS = {
@@ -245,7 +565,7 @@ def es_financiable(nivel_carrera: str, nivel_max: str) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────
-# MAPEO DE 7 TIPOS VOCACIONALES → PERFIL RIASEC (para el recomendador)
+# MAPEO DE 7 TIPOS VOCACIONALES → PERFIL RIASEC
 # ─────────────────────────────────────────────────────────────
 _TIPO_A_RIASEC = {
     "SOCIAL":             "S",
@@ -263,18 +583,6 @@ def perfil_test_a_riasec(con_baremos: dict) -> dict:
     Convierte el dict de baremos (7 tipos vocacionales) a un perfil
     RIASEC (6 áreas, valores 0-1) que el recomendador semántico
     puede consumir.
-
-    Mapeo:
-        SOCIAL              → S
-        LIDERAZGO           → E
-        ARTÍSTICO           → A
-        ORGANIZADO          → C
-        EMPRENDEDOR         → E
-        INVESTIGATIVO       → I
-        TÉCNICO MECÁNICO    → R
-
-    Si dos tipos mapean a la misma letra RIASEC (LIDERAZGO y
-    EMPRENDEDOR → E), se promedian sus baremos.
     """
     acumulado = {"R": 0.0, "I": 0.0, "A": 0.0, "S": 0.0, "E": 0.0, "C": 0.0}
     conteo = {"R": 0, "I": 0, "A": 0, "S": 0, "E": 0, "C": 0}
@@ -293,7 +601,6 @@ def perfil_test_a_riasec(con_baremos: dict) -> dict:
     for letra in ("R", "I", "A", "S", "E", "C"):
         if conteo[letra] > 0:
             promedio = acumulado[letra] / conteo[letra]
-            # Los baremos van típicamente 0-99 → normalizo a 0-1
             perfil[letra] = min(1.0, promedio / 99.0)
         else:
             perfil[letra] = 0.0
@@ -303,7 +610,7 @@ def perfil_test_a_riasec(con_baremos: dict) -> dict:
 # ─────────────────────────────────────────────────────────────
 # CATÁLOGO Y FUZZY MATCH
 # ─────────────────────────────────────────────────────────────
-def catalogo_plano() -> list[str]:
+def catalogo_plano() -> list:
     seen = set()
     for carreras in CARRERAS.values():
         for c in carreras:
@@ -314,7 +621,7 @@ def catalogo_plano() -> list[str]:
 CATALOGO = catalogo_plano()
 
 
-def normalizar_carrera(texto: str) -> str | None:
+def normalizar_carrera(texto: str):
     if not texto or not texto.strip():
         return None
     t = texto.strip()
@@ -328,26 +635,11 @@ def normalizar_carrera(texto: str) -> str | None:
 # ─────────────────────────────────────────────────────────────
 # INTERPRETACIÓN SEMÁNTICA DE CARRERAS LIBRES
 # ─────────────────────────────────────────────────────────────
-def interpretar_carrera_libre(texto: str, perfil_riasec: dict) -> dict | None:
+def interpretar_carrera_libre(texto: str, perfil_riasec: dict):
     """
     Usa el recomendador semántico para traducir un texto libre
     ("corredor de motos") a una carrera del catálogo oficial
     ("Mecánica Automotriz").
-
-    Devuelve None si:
-      - El recomendador no está disponible.
-      - No hubo matches razonables.
-      - La carrera interpretada no existe en el catálogo oficial
-        del test (porque el recomendador tiene su propio catálogo).
-      - El match es demasiado débil (< 0.30).
-
-    Devuelve un dict con:
-      - "carrera": nombre exacto en el catálogo oficial
-      - "match_usuario": similitud con el texto del alumno (0-1)
-      - "afinidad_test": afinidad con el perfil del test (0-1)
-      - "score_final": score combinado
-      - "alternativas": otras carreras sugeridas con score
-      - "texto_original": texto tal cual lo escribió el alumno
     """
     if not _RECOMENDADOR_DISPONIBLE or not texto or not texto.strip():
         return None
@@ -366,7 +658,6 @@ def interpretar_carrera_libre(texto: str, perfil_riasec: dict) -> dict | None:
     if not recomendaciones:
         return None
 
-    # Filtro los que matchean con el catálogo oficial del test
     validos = []
     for rec in recomendaciones:
         nombre_oficial = normalizar_carrera(rec["nombre"])
@@ -464,27 +755,25 @@ def evaluar_propuesta(
     perfil_riasec=None,
 ):
     """
-    Evalúa la propuesta del estudiante.
+    Evalúa la propuesta del estudiante. Las carreras del alumno son
+    OPCIONALES: si no hay ninguna, solo se evalúan las del test.
 
-    Novedad: cuando una carrera libre no se encuentra por fuzzy
-    clásico, se intenta INTERPRETAR con el recomendador semántico
-    antes de descartarla. Las interpretaciones quedan registradas
-    en el resultado para mostrarlas en el informe.
+    Cuando una carrera libre no se encuentra por fuzzy clásico, se
+    intenta INTERPRETAR con el recomendador semántico antes de
+    descartarla.
     """
     alumno_norm, no_encontradas = [], []
-    interpretaciones = []      # log de traducciones semánticas
+    interpretaciones = []
 
     for c in carreras_alumno:
         if not c or not c.strip():
             continue
 
-        # 1. Intento normal (exacto + fuzzy)
         n = normalizar_carrera(c)
         if n:
             alumno_norm.append(n)
             continue
 
-        # 2. Fallback semántico
         interp = None
         if perfil_riasec is not None:
             interp = interpretar_carrera_libre(c, perfil_riasec)
@@ -495,7 +784,6 @@ def evaluar_propuesta(
         else:
             no_encontradas.append(c.strip())
 
-    # Deduplicar preservando orden
     alumno_norm = list(dict.fromkeys(alumno_norm))
 
     test_norm = [c["carrera"] for c in carreras_test]
@@ -529,6 +817,7 @@ def evaluar_propuesta(
 def _init():
     if "paso" not in st.session_state: st.session_state.paso = 1
     if "datos" not in st.session_state: st.session_state.datos = {}
+    if "tema" not in st.session_state: st.session_state.tema = "claro"
 
 
 _init()
@@ -540,7 +829,7 @@ def ir_a_paso(n):
 
 
 # ─────────────────────────────────────────────────────────────
-# COMPONENTE: PANEL DE CRITERIOS (usa templates)
+# COMPONENTE: PANEL DE CRITERIOS
 # ─────────────────────────────────────────────────────────────
 def panel_criterios(con_baremos: dict):
     if not con_baremos:
@@ -584,9 +873,30 @@ def paso_1():
 
     st.markdown("### Datos del estudiante")
     n1, n2, n3 = st.columns(3, gap="medium")
-    with n1: nombre = st.text_input("Nombre(s)", placeholder="Ej. María Fernanda")
-    with n2: apellido_paterno = st.text_input("Apellido paterno", placeholder="Ej. García")
-    with n3: apellido_materno = st.text_input("Apellido materno", placeholder="Ej. López")
+    with n1:
+        nombre = st.text_input(
+            "Nombre(s)",
+            placeholder="Ej. María Fernanda",
+            key="in_nombre",
+            on_change=_sanitizar_nombre,
+            args=("in_nombre",),
+        )
+    with n2:
+        apellido_paterno = st.text_input(
+            "Apellido paterno",
+            placeholder="Ej. García",
+            key="in_apellido_paterno",
+            on_change=_sanitizar_nombre,
+            args=("in_apellido_paterno",),
+        )
+    with n3:
+        apellido_materno = st.text_input(
+            "Apellido materno",
+            placeholder="Ej. López",
+            key="in_apellido_materno",
+            on_change=_sanitizar_nombre,
+            args=("in_apellido_materno",),
+        )
 
     nombre_completo = " ".join(
         p for p in [nombre.strip(), apellido_paterno.strip(), apellido_materno.strip()] if p
@@ -601,8 +911,20 @@ def paso_1():
             if not pdf:
                 st.error("Por favor sube el PDF del formulario.")
                 return
-            if not nombre.strip() or not apellido_paterno.strip() or not apellido_materno.strip():
-                st.error("Completa los tres campos: Nombre(s), Apellido paterno y Apellido materno.")
+
+            errores = []
+            for valor, campo in [
+                (nombre, "Nombre(s)"),
+                (apellido_paterno, "Apellido paterno"),
+                (apellido_materno, "Apellido materno"),
+            ]:
+                ok, msg = validar_nombre(valor, campo)
+                if not ok:
+                    errores.append(msg)
+
+            if errores:
+                for err in errores:
+                    st.error(err)
                 return
 
             with st.spinner("Procesando escaneo con OCR..."):
@@ -638,6 +960,7 @@ def paso_1():
             ir_a_paso(2)
 
     activar_enter()
+    bloquear_caracteres_invalidos_en_nombres()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -808,12 +1131,12 @@ def paso_3():
 
 
 # ─────────────────────────────────────────────────────────────
-# PASO 4 — PROPUESTA (con interpretación semántica en vivo)
+# PASO 4 — PROPUESTA (con carreras opcionales)
 # ─────────────────────────────────────────────────────────────
 def paso_4():
     render_html(tpl.barra_progreso(4))
     st.title("Paso 4: Propuesta del estudiante")
-    st.caption("El estudiante propone 3 carreras. Presiona Enter para evaluar.")
+    st.caption("Las carreras propuestas son OPCIONALES. Presiona Enter para evaluar.")
 
     datos = st.session_state.datos
     top = datos.get("top", [])
@@ -827,7 +1150,6 @@ def paso_4():
         if st.button("← Retroceder"): ir_a_paso(3)
         return
 
-    # Perfil RIASEC cacheado en session_state (evita recalcular en cada rerun)
     if "_perfil_riasec" not in st.session_state.datos:
         st.session_state.datos["_perfil_riasec"] = perfil_test_a_riasec(con_baremos)
     perfil_riasec = st.session_state.datos["_perfil_riasec"]
@@ -841,9 +1163,15 @@ def paso_4():
     render_html(tpl.proposal_box())
 
     c1, c2, c3 = st.columns(3, gap="medium")
-    with c1: prop1 = st.text_input("Carrera 1", placeholder="Ej. Agronomía", key="prop1")
-    with c2: prop2 = st.text_input("Carrera 2", placeholder="Ej. Ing de Sistemas", key="prop2")
-    with c3: prop3 = st.text_input("Carrera 3", placeholder="Ej. Biología", key="prop3")
+    with c1:
+        prop1 = st.text_input("Carrera 1 (opcional)",
+                              placeholder="Ej. Agronomía", key="prop1")
+    with c2:
+        prop2 = st.text_input("Carrera 2 (opcional)",
+                              placeholder="Ej. Ing de Sistemas", key="prop2")
+    with c3:
+        prop3 = st.text_input("Carrera 3 (opcional)",
+                              placeholder="Ej. Biología", key="prop3")
 
     render_html(tpl.section_title("Nivel educativo que puede financiar"))
     nivel_max = st.radio(
@@ -870,7 +1198,6 @@ def paso_4():
         for c in principales:
             render_html(tpl.proposal_row("•", c["carrera"], "test"))
 
-        # Acumulo interpretaciones para mostrarlas
         interpretaciones_vivo = []
 
         for c in validas:
@@ -878,17 +1205,16 @@ def paso_4():
             if norm:
                 render_html(tpl.proposal_row("•", norm, "alumno"))
             else:
-                # Intento semántico
                 if _RECOMENDADOR_DISPONIBLE:
                     interp = interpretar_carrera_libre(c, perfil_riasec)
                     if interp:
                         interpretaciones_vivo.append(interp)
                         texto = (
-                            f"{c} → interpretada como "
-                            f"<b>{interp['carrera']}</b> "
+                            f"{tpl.e(c)} → interpretada como "
+                            f"<b>{tpl.e(interp['carrera'])}</b> "
                             f"(match {int(interp['match_usuario']*100)}%)"
                         )
-                        render_html(tpl.proposal_row("•", texto, "alumno",es_html=True))
+                        render_html(tpl.proposal_row("•", texto, "alumno", es_html=True))
                     else:
                         render_html(tpl.proposal_row(
                             "•", f"{c} (no encontrada en catálogo)", "alumno"
@@ -904,6 +1230,11 @@ def paso_4():
                 f"carrera(s) que no estaban en el catálogo. "
                 f"Verás el detalle en el informe final."
             )
+    else:
+        st.info(
+            "ℹ️ No ingresaste carreras. Se evaluará solo con las "
+            "carreras sugeridas por el test."
+        )
 
     st.divider()
     retro_col, _, conf_col = st.columns([1, 4, 1])
@@ -911,9 +1242,7 @@ def paso_4():
         if st.button("← Retroceder", use_container_width=True): ir_a_paso(3)
     with conf_col:
         if st.button("Evaluar →", type="primary", use_container_width=True):
-            if not any(v and v.strip() for v in carreras_alumno):
-                st.error("Ingresa al menos una carrera propuesta.")
-                return
+            # Las carreras del alumno son OPCIONALES: no se exige ninguna.
 
             resultado = evaluar_propuesta(
                 carreras_test=principales,
@@ -922,7 +1251,7 @@ def paso_4():
                 institucion=institucion,
                 tipo1=tipo1,
                 tipo2=tipo2,
-                perfil_riasec=perfil_riasec,   # ← nuevo
+                perfil_riasec=perfil_riasec,
             )
             st.session_state.datos["propuesta"] = {
                 "carreras_alumno": carreras_alumno,
@@ -981,7 +1310,6 @@ def paso_5():
                 s_voc=f["s_voc"], s_prop=f["s_prop"], s_test=f["s_test"],
             ))
 
-    # ── INTERPRETACIONES SEMÁNTICAS ──────────────────────────
     interps = resultado.get("interpretaciones", [])
     if interps:
         render_html(tpl.section_title("Interpretación de carreras libres"))
@@ -1083,7 +1411,6 @@ def paso_6():
                         use_container_width=True,
                         config={"displayModeBar": False})
 
-    # Ordenar tipos por baremo descendente
     items_tipos = []
     for tipo, d in con_baremos.items():
         baremo = d.get("Baremo")
@@ -1161,14 +1488,14 @@ def paso_6():
             })
         render_html(tpl.info_block(
             3, "Carreras finales recomendadas",
-            "Síntesis del test + las 3 carreras que propuso el estudiante.",
+            "Síntesis del test + las carreras que propuso el estudiante (si hubo).",
             tpl.tabla_carreras(items_finales, max_final),
         ))
     else:
         render_html(tpl.empty_note("Aún no se evaluaron las carreras finales. Vuelve al Paso 4."))
 
     # ─────────────────────────────────────────────────────────
-    # SECCIÓN 4 — INTERPRETACIÓN SEMÁNTICA (nueva)
+    # SECCIÓN 4 — INTERPRETACIÓN SEMÁNTICA
     # ─────────────────────────────────────────────────────────
     interps = resultado.get("interpretaciones", [])
     if interps:
@@ -1225,7 +1552,6 @@ def paso_6():
             lineas_final.append(f"  {i}. {it['carrera']:30} Score {it['score']:>5} · {tpl.NIVEL_LABEL[lvl]}")
     final_txt = "\n".join(lineas_final) if lineas_final else "  —"
 
-    # Bloque de interpretaciones para copiar
     interp_txt = ""
     if interps:
         lineas_interp_txt = []
@@ -1272,6 +1598,9 @@ Regla de niveles:
 # ─────────────────────────────────────────────────────────────
 # ROUTER
 # ─────────────────────────────────────────────────────────────
+aplicar_tema()
+render_toggle_tema()
+
 PASOS = {1: paso_1, 2: paso_2, 3: paso_3, 4: paso_4, 5: paso_5, 6: paso_6}
 PASOS[st.session_state.paso]()
 
