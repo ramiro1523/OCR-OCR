@@ -25,9 +25,9 @@ from vocacional.carreras import (
 )
 from vocacional.utils import generar_items_vacios, obtener_bloques, auditar_marcas
 
+
 # ─────────────────────────────────────────────────────────────
-# RECOMENDADOR SEMÁNTICO (opcional: si falla el import, todo
-# sigue funcionando con el sistema clásico)
+# RECOMENDADOR SEMÁNTICO (opcional)
 # ─────────────────────────────────────────────────────────────
 try:
     from vocacional.recomendador import recomendar_carreras as _recomendar_semantico
@@ -161,158 +161,35 @@ def preservar_scroll():
 
 
 # ─────────────────────────────────────────────────────────────
-# TEMA CLARO / OSCURO
+# TEMA CLARO / OSCURO (funciones heredadas)
 # ─────────────────────────────────────────────────────────────
 def _css_modo_oscuro() -> str:
-    """CSS que oscurece toda la app. Se inyecta con !important para
-    sobreescribir los estilos de Streamlit y de styles.css."""
+    """CSS heredado. El tema se aplica vía clase en <body>."""
     return """
     <style>
-    /* Fondos principales */
     .stApp, [data-testid="stAppViewContainer"],
     [data-testid="stAppViewContainer"] > .main {
         background-color: #0e1117 !important;
-    }
-    [data-testid="stHeader"] {
-        background-color: rgba(14, 17, 23, 0.85) !important;
-    }
-    [data-testid="stSidebar"] {
-        background-color: #1a1c24 !important;
-    }
-
-    /* Texto global */
-    [data-testid="stMarkdownContainer"] *,
-    [data-testid="stSidebar"] *,
-    h1, h2, h3, h4, h5, h6, p, span, label, li, td, th {
-        color: #fafafa !important;
-    }
-    .stCaption, [data-testid="stCaptionContainer"] {
-        color: #a0a3ad !important;
-    }
-
-    /* Inputs */
-    [data-baseweb="input"] input,
-    [data-baseweb="select"] > div,
-    [data-baseweb="textarea"] textarea {
-        background-color: #1e2027 !important;
-        color: #fafafa !important;
-        border-color: #3a3d47 !important;
-    }
-    [data-baseweb="radio"] label {
-        color: #fafafa !important;
-    }
-
-    /* Botones */
-    .stButton > button {
-        background-color: #262730 !important;
-        color: #fafafa !important;
-        border: 1px solid #3a3d47 !important;
-    }
-    .stButton > button:hover {
-        background-color: #32353f !important;
-        border-color: #ff4b4b !important;
-    }
-    .stButton > button[kind="primary"] {
-        background-color: #ff4b4b !important;
-        color: #ffffff !important;
-        border: none !important;
-    }
-
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #1a1c24 !important;
-        border-bottom-color: #3a3d47 !important;
-    }
-    .stTabs [data-baseweb="tab"] {
-        color: #a0a3ad !important;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #ff4b4b !important;
-    }
-
-    /* Contenedores con borde (st.container(border=True)) */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #1a1c24 !important;
-        border-color: #3a3d47 !important;
-    }
-
-    /* Código */
-    .stCode, code, pre, .stCodeBlock {
-        background-color: #1e2027 !important;
-        color: #fafafa !important;
-        border: 1px solid #3a3d47 !important;
-    }
-
-    /* Dataframe */
-    [data-testid="stDataFrame"] {
-        background-color: #1a1c24 !important;
-    }
-    [data-testid="stDataFrame"] * {
-        color: #fafafa !important;
-    }
-
-    /* Expander */
-    [data-testid="stExpander"] {
-        background-color: #1a1c24 !important;
-        border-color: #3a3d47 !important;
-    }
-    [data-testid="stExpander"] summary {
-        color: #fafafa !important;
-    }
-
-    /* Alertas */
-    [data-testid="stAlert"] {
-        background-color: #262730 !important;
-        color: #fafafa !important;
-        border-color: #3a3d47 !important;
-    }
-
-    /* Divider */
-    hr {
-        border-color: #3a3d47 !important;
-    }
-
-    /* Clases custom de templates.py */
-    .crit-card, .voc-card, .career-card, .final-card,
-    .proposal-row, .viz-card, .info-block, .informe-block,
-    .student-header, .proposal-box, .section-title,
-    .niveles-hero, .predominante-banner, .comp-row,
-    .niveles-summary .card {
-        background-color: #1a1c24 !important;
-        color: #fafafa !important;
-        border-color: #3a3d47 !important;
-    }
-    .section-title {
-        color: #ff4b4b !important;
     }
     </style>
     """
 
 
 def _css_modo_claro() -> str:
-    """Reset a claro. Solo por si quedaron restos del modo oscuro."""
+    """CSS heredado."""
     return """
     <style>
     .stApp, [data-testid="stAppViewContainer"],
     [data-testid="stAppViewContainer"] > .main {
         background-color: #ffffff !important;
     }
-    [data-testid="stHeader"] {
-        background-color: rgba(255, 255, 255, 0.85) !important;
-    }
     </style>
     """
 
 
 # ─────────────────────────────────────────────────────────────
-# TEMA CLARO / OSCURO
+# TEMA CLARO / OSCURO (aplicación actual)
 # ─────────────────────────────────────────────────────────────
-# El CSS del tema oscuro vive en styles.css scopeado bajo
-# `body.ieppo-oscuro`. Aquí solo añadimos/quitar esa clase al
-# <body> del documento padre vía JavaScript. Es liviano: no
-# re-inyecta CSS en cada rerun.
-# ─────────────────────────────────────────────────────────────
-
 def aplicar_tema():
     """Añade o quita la clase `ieppo-oscuro` al <body> del padre."""
     tema = st.session_state.get("tema", "claro")
@@ -355,6 +232,8 @@ def render_toggle_tema():
 _PATRON_NOMBRE = re.compile(
     r"^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+(?:[\s'\-][a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+)*$"
 )
+
+
 def _sanitizar_nombre(key: str):
     """Elimina caracteres no permitidos del session_state tras cada
     cambio. Fallback del JS."""
@@ -377,9 +256,6 @@ def validar_nombre(texto: str, campo: str = "El campo") -> tuple:
       - Solo letras (incluye acentos y ñ).
       - Permite espacios, apóstrofes y guiones como separadores,
         pero NO al inicio, al final, ni dos seguidos.
-
-    Returns:
-        (es_valido, mensaje_error)
     """
     t = (texto or "").strip()
 
@@ -396,15 +272,12 @@ def validar_nombre(texto: str, campo: str = "El campo") -> tuple:
         )
     return True, ""
 
+
 # ─────────────────────────────────────────────────────────────
 # BLOQUEO DE CARACTERES EN CAMPOS DE NOMBRE (frontend)
 # ─────────────────────────────────────────────────────────────
 def bloquear_caracteres_invalidos_en_nombres():
-    """
-    Bloquea números y símbolos en los campos de nombre/apellidos.
-    Usa `beforeinput` (más fiable que keydown) e identifica los inputs
-    por `aria-label` (atributo estándar que Streamlit siempre pone).
-    """
+    """Bloquea números y símbolos en los campos de nombre/apellidos."""
     components.html("""
     <script>
     (function() {
@@ -415,17 +288,13 @@ def bloquear_caracteres_invalidos_en_nombres():
         function attach(input, nombre) {
             if (input._ieppoBound) return;
             input._ieppoBound = true;
-            console.log('[IEPPO] Filtro aplicado a:', nombre);
 
-            // 1. Bloquear ANTES de insertar (cubre teclado, pegado,
-            //    arrastrar, autocompletar, IME)
             input.addEventListener('beforeinput', function(e) {
                 if (e.data && INVALID.test(e.data)) {
                     e.preventDefault();
                 }
             });
 
-            // 2. Fallback para navegadores sin beforeinput
             input.addEventListener('keydown', function(e) {
                 if (e.ctrlKey || e.metaKey || e.altKey) return;
                 if (e.key.length !== 1) return;
@@ -434,7 +303,6 @@ def bloquear_caracteres_invalidos_en_nombres():
                 }
             });
 
-            // 3. Pegado: limpiar el texto pegado
             input.addEventListener('paste', function(e) {
                 e.preventDefault();
                 const raw = (e.clipboardData || window.clipboardData).getData('text') || '';
@@ -444,7 +312,6 @@ def bloquear_caracteres_invalidos_en_nombres():
                 }
             });
 
-            // 4. Bloquear drag-and-drop de texto
             input.addEventListener('drop', function(e) { e.preventDefault(); });
         }
 
@@ -465,7 +332,6 @@ def bloquear_caracteres_invalidos_en_nombres():
 
         scan();
 
-        // Re-escanear cuando Streamlit re-renderiza
         if (window._ieppoFilterObserver) {
             window._ieppoFilterObserver.disconnect();
         }
@@ -520,24 +386,134 @@ def criterio_predominante(resumen: dict) -> str:
 
 
 # ─────────────────────────────────────────────────────────────
+# INSTITUCIONES DONDE SE OFRECE CADA CARRERA
+# ─────────────────────────────────────────────────────────────
+INSTITUCIONES_POR_CARRERA = {
+    # ── Universitarias / Salud ──
+    "Medicina":                        {"publica", "privada"},
+    "Enfermería":                      {"publica", "privada"},
+    "Obstetricia":                     {"publica", "privada"},
+    "Odontología":                     {"publica", "privada"},
+    "Nutricionista":                   {"publica", "privada"},
+    "Tecnología Médica":               {"publica", "privada"},
+    "Ciencias de la Salud":            {"publica", "privada"},
+    "Farmacia":                        {"publica", "privada"},
+    "Veterinaria":                     {"publica", "privada"},
+    "Psicología":                      {"publica", "privada"},
+
+    # ── Ciencias Sociales / Humanidades ──
+    "Derecho Criminalística":          {"publica", "privada"},
+    "Asistente Social":                {"publica", "privada"},
+    "Sociología":                      {"publica"},
+    "Historia":                        {"publica"},
+    "Filosofía":                       {"publica"},
+    "Antropología":                    {"publica"},
+    "Arqueología":                     {"publica"},
+    "Literatura":                      {"publica"},
+    "Pedagogía":                       {"publica", "privada"},
+    "Educación":                       {"publica", "privada"},
+    "Educación Artística":             {"publica", "privada"},
+
+    # ── Ciencias exactas ──
+    "Biología":                        {"publica"},
+    "Química":                         {"publica"},
+    "Física":                          {"publica"},
+    "Matemática":                      {"publica"},
+    "Estadística":                     {"publica"},
+    "Astronomía":                      {"publica"},
+    "Agronomía":                       {"publica"},
+    "Zootecnia":                       {"publica"},
+
+    # ── Ingenierías ──
+    "Ing Civil":                       {"publica", "privada"},
+    "Ing de Sistemas":                 {"publica", "privada"},
+    "Ing Industrial":                  {"publica", "privada"},
+    "Ing Mecánica":                    {"publica", "privada"},
+    "Ing Mecatrónica":                 {"publica", "privada"},
+    "Ing Automotriz":                  {"publica", "privada"},
+    "Ing Eléctrica":                   {"publica", "privada"},
+    "Ing Electrónica":                 {"publica", "privada"},
+    "Ing Química":                     {"publica", "privada"},
+    "Ing Ambiental":                   {"publica", "privada"},
+    "Ing Forestal":                    {"publica"},
+    "Ing Metalúrgica":                 {"publica"},
+    "Ing de Minas":                    {"publica", "privada"},
+    "Ing de Industrias Alimentarias":  {"publica", "privada"},
+
+    # ── Tecnología / Técnicas ──
+    "Mecánica Automotriz":             {"publica", "privada"},
+    "Mecatrónica":                     {"publica", "privada"},
+    "Metalúrgica":                     {"publica", "privada"},
+    "Industrial":                      {"publica", "privada"},
+    "Soldadura Industrial":            {"publica", "privada"},
+    "Operador de Maquinarias Pesadas": {"publica", "privada"},
+    "Topografía":                      {"publica", "privada"},
+    "Tec en Informática":              {"publica", "privada"},
+    "Informática":                     {"publica", "privada"},
+    "Industria Alimentaria":           {"publica", "privada"},
+
+    # ── Negocios ──
+    "Administración":                  {"publica", "privada"},
+    "Administración de Empresas":      {"publica", "privada"},
+    "Negocios Internacionales":        {"privada"},
+    "Contabilidad":                    {"publica", "privada"},
+    "Economía":                        {"publica", "privada"},
+    "Finanzas":                        {"privada"},
+    "Marketing":                       {"privada"},
+
+    # ── Arquitectura / Arte / Diseño ──
+    "Arquitectura":                    {"publica", "privada"},
+    "Diseño Gráfico":                  {"publica", "privada"},
+    "Diseño de Interiores":            {"publica", "privada"},
+    "Diseño de Modas":                 {"privada"},
+    "Artes Visuales":                  {"publica", "privada"},
+    "Artes Plásticas":                 {"publica"},
+    "Dibujo y Pintura":                {"publica", "privada"},
+    "Artista Profesional":             {"privada"},
+    "Profesional Artístico Músico":    {"publica", "privada"},
+    "Actuación":                       {"privada"},
+    "Fotografía":                      {"privada"},
+    "Publicidad":                      {"privada"},
+    "C. Comunicación":                 {"publica", "privada"},
+    "Ing de Sonido":                   {"privada"},
+
+    # ── Servicios / Otros ──
+    "Gastronomía":                     {"publica", "privada"},
+    "Gastronomía/Repostería":          {"publica", "privada"},
+    "Cosmetología":                    {"publica", "privada"},
+    "Auxiliar de Vuelo":               {"privada"},
+    "Aviación":                        {"publica", "privada"},
+    "Guía Oficial de Turismo":         {"publica", "privada"},
+    "PNP":                             {"publica"},
+    "Fuerzas Armadas":                 {"publica"},
+    "Tec en Laboratorio":              {"publica", "privada"},
+}
+
+
+# ─────────────────────────────────────────────────────────────
 # NIVELES EDUCATIVOS E INSTITUCIONES
 # ─────────────────────────────────────────────────────────────
 NIVELES = {
-    "universitario": {"label": "Universitario",
-                      "desc": "Carreras de 5 años a más (licenciatura).",
-                      "jerarquia": 3, "chip": "nivel-univ"},
-    "tecnico":       {"label": "Técnico",
-                      "desc": "Institutos técnicos (2-3 años).",
-                      "jerarquia": 2, "chip": "nivel-tec"},
-    "cetpro":        {"label": "CETPRO / Ocupacional",
-                      "desc": "Cursos cortos ocupacionales (6-18 meses).",
-                      "jerarquia": 1, "chip": "nivel-cetpro"},
+    "sin_especificar": {"label": "Sin especificar",
+                        "desc": "No filtrar por nivel educativo.",
+                        "jerarquia": 3,
+                        "chip": ""},
+    "universitario":   {"label": "Universitario",
+                        "desc": "Carreras de 5 años a más (licenciatura).",
+                        "jerarquia": 3, "chip": "nivel-univ"},
+    "tecnico":         {"label": "Técnico",
+                        "desc": "Institutos técnicos (2-3 años).",
+                        "jerarquia": 2, "chip": "nivel-tec"},
+    "cetpro":          {"label": "CETPRO / Ocupacional",
+                        "desc": "Cursos cortos ocupacionales (6-18 meses).",
+                        "jerarquia": 1, "chip": "nivel-cetpro"},
 }
 
 INSTITUCIONES = {
-    "publica":     {"label": "Pública",     "chip": "inst-pub"},
-    "privada":     {"label": "Privada",     "chip": "inst-priv"},
-    "indiferente": {"label": "Indiferente", "chip": ""},
+    "sin_especificar": {"label": "Sin especificar", "chip": ""},
+    "publica":         {"label": "Pública",         "chip": "inst-pub"},
+    "privada":         {"label": "Privada",         "chip": "inst-priv"},
+    "indiferente":     {"label": "Indiferente",     "chip": ""},
 }
 
 CARRERAS_CETPRO = {
@@ -560,8 +536,23 @@ def nivel_de_carrera(carrera: str) -> str:
     return "universitario"
 
 
-def es_financiable(nivel_carrera: str, nivel_max: str) -> bool:
-    return NIVELES[nivel_carrera]["jerarquia"] <= NIVELES[nivel_max]["jerarquia"]
+def es_financiable(nivel_carrera, nivel_max, carrera=None, institucion_max="sin_especificar"):
+    """Filtro por nivel educativo e institución."""
+    if nivel_max != "sin_especificar":
+        if NIVELES[nivel_carrera]["jerarquia"] > NIVELES[nivel_max]["jerarquia"]:
+            return False
+
+    if institucion_max in ("sin_especificar", "indiferente"):
+        return True
+
+    if carrera is None:
+        return True
+
+    insts = INSTITUCIONES_POR_CARRERA.get(carrera)
+    if insts is None:
+        return True
+
+    return institucion_max in insts
 
 
 # ─────────────────────────────────────────────────────────────
@@ -577,13 +568,21 @@ _TIPO_A_RIASEC = {
     "TÉCNICO MECÁNICO":   "R",
 }
 
+# Orden oficial de presentación de los 7 tipos vocacionales en el informe.
+# No es el orden por baremo, es el orden del manual IEPPO.
+ORDEN_TIPOS_VOCACIONALES = [
+    "LIDERAZGO",
+    "TÉCNICO MECÁNICO",
+    "SOCIAL",
+    "ORGANIZADO",
+    "ARTÍSTICO",
+    "EMPRENDEDOR",
+    "INVESTIGATIVO",
+]
+
 
 def perfil_test_a_riasec(con_baremos: dict) -> dict:
-    """
-    Convierte el dict de baremos (7 tipos vocacionales) a un perfil
-    RIASEC (6 áreas, valores 0-1) que el recomendador semántico
-    puede consumir.
-    """
+    """Convierte baremos a perfil RIASEC (6 áreas, valores 0-1)."""
     acumulado = {"R": 0.0, "I": 0.0, "A": 0.0, "S": 0.0, "E": 0.0, "C": 0.0}
     conteo = {"R": 0, "I": 0, "A": 0, "S": 0, "E": 0, "C": 0}
 
@@ -636,11 +635,7 @@ def normalizar_carrera(texto: str):
 # INTERPRETACIÓN SEMÁNTICA DE CARRERAS LIBRES
 # ─────────────────────────────────────────────────────────────
 def interpretar_carrera_libre(texto: str, perfil_riasec: dict):
-    """
-    Usa el recomendador semántico para traducir un texto libre
-    ("corredor de motos") a una carrera del catálogo oficial
-    ("Mecánica Automotriz").
-    """
+    """Traduce texto libre a carrera del catálogo."""
     if not _RECOMENDADOR_DISPONIBLE or not texto or not texto.strip():
         return None
 
@@ -754,14 +749,7 @@ def evaluar_propuesta(
     tipo2,
     perfil_riasec=None,
 ):
-    """
-    Evalúa la propuesta del estudiante. Las carreras del alumno son
-    OPCIONALES: si no hay ninguna, solo se evalúan las del test.
-
-    Cuando una carrera libre no se encuentra por fuzzy clásico, se
-    intenta INTERPRETAR con el recomendador semántico antes de
-    descartarla.
-    """
+    """Evalúa la propuesta del estudiante."""
     alumno_norm, no_encontradas = [], []
     interpretaciones = []
 
@@ -794,8 +782,16 @@ def evaluar_propuesta(
             universo.append(c)
 
     scored = [_score_carrera(c, tipo1, tipo2, test_norm, alumno_norm) for c in universo]
-    financiables = [s for s in scored if es_financiable(s["nivel"], nivel_max)]
-    descartadas  = [s for s in scored if s not in financiables]
+
+    financiables = [
+        s for s in scored
+        if es_financiable(
+            s["nivel"], nivel_max,
+            carrera=s["carrera"],
+            institucion_max=institucion,
+        )
+    ]
+    descartadas = [s for s in scored if s not in financiables]
     financiables.sort(key=lambda x: x["score"], reverse=True)
     finales = financiables[:2]
     for i, f in enumerate(finales, 1):
@@ -1131,7 +1127,7 @@ def paso_3():
 
 
 # ─────────────────────────────────────────────────────────────
-# PASO 4 — PROPUESTA (con carreras opcionales)
+# PASO 4 — PROPUESTA
 # ─────────────────────────────────────────────────────────────
 def paso_4():
     render_html(tpl.barra_progreso(4))
@@ -1189,7 +1185,6 @@ def paso_4():
         horizontal=True, key="institucion", label_visibility="collapsed"
     )
 
-    # ── INTERPRETACIÓN SEMÁNTICA EN VIVO ─────────────────────
     carreras_alumno = [prop1, prop2, prop3]
     validas = [c for c in carreras_alumno if c and c.strip()]
 
@@ -1242,8 +1237,6 @@ def paso_4():
         if st.button("← Retroceder", use_container_width=True): ir_a_paso(3)
     with conf_col:
         if st.button("Evaluar →", type="primary", use_container_width=True):
-            # Las carreras del alumno son OPCIONALES: no se exige ninguna.
-
             resultado = evaluar_propuesta(
                 carreras_test=principales,
                 carreras_alumno=carreras_alumno,
@@ -1287,8 +1280,8 @@ def paso_5():
 
     resultado = propuesta.get("resultado", {})
     finales   = resultado.get("finales", [])
-    inst_key  = propuesta.get("institucion", "indiferente")
-    inst_meta = INSTITUCIONES.get(inst_key, INSTITUCIONES["indiferente"])
+    inst_key  = propuesta.get("institucion", "sin_especificar")
+    inst_meta = INSTITUCIONES.get(inst_key, INSTITUCIONES["sin_especificar"])
 
     if finales:
         render_html(tpl.section_title("Carreras finales recomendadas"))
@@ -1391,9 +1384,6 @@ def paso_6():
     render_html(tpl.hero_informe(nombre_completo, sexo_label))
     render_html(tpl.leyenda_informe())
 
-    # ─────────────────────────────────────────────────────────
-    # SECCIÓN 0 — ANÁLISIS VISUAL
-    # ─────────────────────────────────────────────────────────
     render_html(tpl.info_block(0, "Análisis visual",
                                "Radar de tipos, distribución de baremos, gauge y comparación."))
 
@@ -1421,12 +1411,21 @@ def paso_6():
             "baremo": baremo,
             "nivel": nivel_correspondencia(baremo),
         })
-    items_tipos.sort(key=lambda x: (x["baremo"] is None, -(x["baremo"] or 0)))
+
+    # Orden fijo del manual IEPPO (no por baremo).
+    # Si aparece un tipo no listado, se va al final preservando el orden original.
+    _orden_idx = {t: i for i, t in enumerate(ORDEN_TIPOS_VOCACIONALES)}
+    items_tipos.sort(key=lambda x: _orden_idx.get(x["tipo"], 999))
 
     col_g, col_c = st.columns(2, gap="medium")
     with col_g:
-        if items_tipos and items_tipos[0]["baremo"] is not None:
-            top1 = items_tipos[0]
+        # Para el gauge, usamos el tipo con mayor baremo (predominante real).
+        _items_por_baremo = sorted(
+            items_tipos,
+            key=lambda x: (x["baremo"] is None, -(x["baremo"] or 0)),
+        )
+        if _items_por_baremo and _items_por_baremo[0]["baremo"] is not None:
+            top1 = _items_por_baremo[0]
             render_html(tpl.viz_card("Tipo predominante",
                                      "Baremo del tipo con mayor puntuación."))
             st.plotly_chart(viz.gauge(top1["baremo"], top1["tipo"]),
@@ -1435,18 +1434,12 @@ def paso_6():
     with col_c:
         render_html(tpl.comp_top2(items_tipos))
 
-    # ─────────────────────────────────────────────────────────
-    # SECCIÓN 1 — TIPOS
-    # ─────────────────────────────────────────────────────────
     render_html(tpl.info_block(
         1, "Tipos vocacionales",
-        "Los 7 tipos evaluados, ordenados por baremo descendente.",
+        "Los 7 tipos evaluados, en el orden del manual IEPPO.",
         tpl.tabla_tipos(items_tipos),
     ))
 
-    # ─────────────────────────────────────────────────────────
-    # SECCIÓN 2 — CARRERAS DEL TEST
-    # ─────────────────────────────────────────────────────────
     carreras_test_list = (
         carreras_test.get("principales", []) + carreras_test.get("respaldo", [])
     )
@@ -1469,9 +1462,6 @@ def paso_6():
     else:
         render_html(tpl.empty_note("Sin carreras del test registradas."))
 
-    # ─────────────────────────────────────────────────────────
-    # SECCIÓN 3 — CARRERAS FINALES
-    # ─────────────────────────────────────────────────────────
     items_finales = []
     max_final = 1
     if finales:
@@ -1494,9 +1484,6 @@ def paso_6():
     else:
         render_html(tpl.empty_note("Aún no se evaluaron las carreras finales. Vuelve al Paso 4."))
 
-    # ─────────────────────────────────────────────────────────
-    # SECCIÓN 4 — INTERPRETACIÓN SEMÁNTICA
-    # ─────────────────────────────────────────────────────────
     interps = resultado.get("interpretaciones", [])
     if interps:
         lineas_interp = []
@@ -1513,23 +1500,21 @@ def paso_6():
             "<pre>" + "\n".join(lineas_interp) + "</pre>",
         ))
 
-    # ─────────────────────────────────────────────────────────
-    # RESUMEN GLOBAL
-    # ─────────────────────────────────────────────────────────
     n_bajo  = sum(1 for i in items_tipos if i["nivel"] == "bajo")
     n_medio = sum(1 for i in items_tipos if i["nivel"] == "medio")
     n_alto  = sum(1 for i in items_tipos if i["nivel"] == "alto")
     render_html(tpl.resumen_niveles(n_bajo, n_medio, n_alto))
 
-    if items_tipos and items_tipos[0]["nivel"] != "sin_dato":
-        top1 = items_tipos[0]
+    # El "predominante" es el que tiene el baremo más alto, sin importar
+    # el orden de presentación de la tabla.
+    _items_pred = [i for i in items_tipos if i["baremo"] is not None]
+    if _items_pred:
+        top_pred = max(_items_pred, key=lambda x: x["baremo"])
         render_html(tpl.predominante_banner(
-            top1["tipo"], top1["crit"], top1["baremo"], top1["nivel"]
+            top_pred["tipo"], top_pred["crit"],
+            top_pred["baremo"], top_pred["nivel"]
         ))
 
-    # ─────────────────────────────────────────────────────────
-    # TEXTO COPIABLE
-    # ─────────────────────────────────────────────────────────
     lineas_tipos = []
     for i, it in enumerate(items_tipos, 1):
         b = it["baremo"] if it["baremo"] is not None else "—"
@@ -1567,7 +1552,7 @@ def paso_6():
 Estudiante : {nombre_completo}
 Sexo       : {sexo_label}
 
-1. TIPOS VOCACIONALES (por baremo):
+1. TIPOS VOCACIONALES:
 {tipos_txt}
 
 2. CARRERAS SUGERIDAS POR EL TEST:
@@ -1577,8 +1562,8 @@ Sexo       : {sexo_label}
 {final_txt}{interp_txt}
 
 Regla de niveles:
-  Tipos      → ≤40 Bajo · 41-59 Medio · ≥60 Alto
-  Carreras   → ≤40% Bajo · 50-79% Medio · ≥80% Alto (del máximo)
+  Tipos      → ≤ 39 Bajo · 40-60 Medio · ≥ 61 Alto
+  Carreras   → ≤ 40% Bajo · 50-79% Medio · ≥ 80% Alto (del máximo)
 """
 
     render_html(tpl.section_title("Copiar informe"))

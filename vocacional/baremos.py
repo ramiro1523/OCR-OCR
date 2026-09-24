@@ -82,17 +82,19 @@ def calcular_baremos(puntajes: dict, sexo: str) -> dict:
 # ─────────────────────────────────────────────────────────────
 # NIVEL DE CORRESPONDENCIA
 # ─────────────────────────────────────────────────────────────
-def nivel_correspondencia(baremo) -> str:
+def nivel_correspondencia(baremo):
     """
-    Replica las fórmulas de INFORME!X/Y/Z:
-        Bajo  = IF(baremo <= 40, "X", " ")
-        Medio = IF(baremo >= 60, " ", IF(baremo >= 41, "X", " "))
-        Alto  = IF(baremo >= 60, "X", " ")
+    Clasifica el baremo en bajo/medio/alto.
+
+    Cortes:
+        ≤ 39   → bajo
+        40-60  → medio
+        ≥ 61   → alto
     """
     if baremo is None:
         return "sin_dato"
-    if baremo <= 40:
+    if baremo <= 39:
         return "bajo"
-    if baremo >= 60:
-        return "alto"
-    return "medio"  # 41-59
+    if baremo <= 60:
+        return "medio"
+    return "alto"
