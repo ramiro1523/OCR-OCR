@@ -1,0 +1,25 @@
+{
+  "campo_nombre": "Ana García López",
+  "campo_dni": "76543210",
+  "campo_fecha": "28/09/2026",
+  "campo_edad": "16",
+  "campo_genero": "F",
+  "campo_grado": "SECUNDARIA COMPLETA",
+  "campo_colegio": "SANTO DOMINGO DE PANGOA",
+
+  "niveles": {
+    "liderazgo": "medio",
+    "tecnico_mecanico": "alto",
+    "social": "medio",
+    "organizado": "alto",
+    "artistico": "bajo",
+    "emprendimiento": "medio",
+    "investigacion": "alto"
+  },
+
+  "potencial_puesto": "ALTO",
+  "campo_areas": "técnicos",
+  "campo_areas_2": "sociales",
+  "campo_carreras": "Ingeniería de Sistemas",
+  "campo_carreras_2": "Administración"
+}
