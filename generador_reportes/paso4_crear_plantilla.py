@@ -24,7 +24,7 @@ SALIDA  = "plantilla_formulario.pdf"
 # --- Modo de calibración ---
 # True  = cuadros visibles (borde rojo + fondo amarillo)
 # False = campos invisibles (producción)
-DEBUG = True
+DEBUG = False
 
 # --- Margen vertical alrededor del texto (simula centrado vertical) ---
 # Valores recomendados: 1, 2, 3

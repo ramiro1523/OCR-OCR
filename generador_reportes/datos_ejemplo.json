@@ -1,10 +1,10 @@
 {
   "campo_nombre": "Ana García López",
-  "campo_dni": "76543210",
   "campo_fecha": "28/09/2026",
   "campo_edad": "16",
   "campo_genero": "F",
-  "campo_grado": "SECUNDARIA COMPLETA",
+  "campo_grado_instruccion": "5",
+  "campo_grado": "COMPLETA",
   "campo_colegio": "SANTO DOMINGO DE PANGOA",
 
   "niveles": {

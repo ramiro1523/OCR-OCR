@@ -3,81 +3,111 @@ import json
 import os
 from datetime import datetime
 import pymupdf as fitz
-from pypdf import PdfReader, PdfWriter
+from config_campos import (
+    CAMPOS_TEXTO_P1, CAMPOS_TEXTO_P2, CAMPOS_MARCAS_P2,
+)
 
-PLANTILLA = "plantilla_formulario.pdf"
+PLANTILLA = "plantilla_original_reparada.pdf"
 CARPETA = "salidas"
 
 AREAS = ["liderazgo", "tecnico_mecanico", "social", "organizado",
          "artistico", "emprendimiento", "investigacion"]
 NIVELES = ["bajo", "medio", "alto"]
 
+CAMPOS_MAYUS = {"campo_areas", "campo_areas_2", "potencial_puesto"}
+CAMPOS_IZQUIERDA = {"campo_grado", "campo_grado_instruccion"}
 
-def preparar_datos(datos: dict, nombres_campos: list) -> dict:
-    salida = dict(datos)
-    niveles = salida.pop("niveles", {})
-    for area in AREAS:
-        nivel_marcado = (niveles.get(area) or "").lower()
-        for opcion in NIVELES:
-            key = f"marca_{area}_{opcion}"
-            salida[key] = "X" if opcion == nivel_marcado else ""
-    for nombre in nombres_campos:
-        salida.setdefault(nombre, "")
-    return salida
+
+def escribir(page, cfg, valor, centrado=True, bold=False):
+    x0 = cfg["x"]
+    y0 = cfg["y"]
+    ancho = cfg["width"]
+    alto = cfg["height"]
+    fs = cfg.get("font_size", 10)
+
+    page_h = page.rect.height
+    font = "hebo" if bold else "helv"
+    txt = str(valor)
+
+    # ── Centrado vertical REAL ──
+    # El texto tiene altura visual ≈ fs.
+    # Baseline = top_rect + (alto + fs * 0.7) / 2
+    # (0.7 ≈ ajuste empírico para que la "letra" quede centrada)
+    y_top = page_h - y0 - alto
+    y_base = y_top + (alto + fs * 0.7) / 2
+
+    # ── Posición X ──
+    if centrado:
+        tw = fitz.get_text_length(txt, fontname=font, fontsize=fs)
+        x = x0 + (ancho - tw) / 2
+    else:
+        x = x0 + 0.5
+
+    page.insert_text(
+        fitz.Point(x, y_base),
+        txt,
+        fontsize=fs,
+        fontname=font,
+        color=(0, 0, 0),
+    )
+
+
+def procesar_valor(nombre, valor):
+    if valor is None:
+        return ""
+    if nombre in CAMPOS_MAYUS:
+        return str(valor).upper()
+    return str(valor)
 
 
 def rellenar(datos: dict, nombre_archivo: str = None) -> str:
     os.makedirs(CARPETA, exist_ok=True)
 
-    # 1. Rellenar con pypdf
-    reader = PdfReader(PLANTILLA)
-    writer = PdfWriter()
-    writer.append(reader)
-    try:
-        writer.set_need_appearances_writer(True)
-    except Exception:
-        pass
+    if not os.path.exists(PLANTILLA):
+        raise FileNotFoundError(f"❌ No existe: {PLANTILLA}")
 
-    nombres_campos = list((reader.get_fields() or {}).keys())
-    salida = preparar_datos(datos, nombres_campos)
+    doc = fitz.open(PLANTILLA)
+    page1 = doc[0]
+    page2 = doc[1]
 
-    for page in writer.pages:
-        writer.update_page_form_field_values(
-            page, salida, auto_regenerate=False
-        )
+    # Cabecera
+    for nombre, cfg in CAMPOS_TEXTO_P1.items():
+        valor = datos.get(nombre, "")
+        if valor:
+            valor = procesar_valor(nombre, valor)
+            centrado = nombre not in CAMPOS_IZQUIERDA
+            escribir(page1, cfg, valor, centrado=centrado)
+
+    # Marcas X
+    niveles = datos.get("niveles", {})
+    for area in AREAS:
+        nivel = (niveles.get(area) or "").lower()
+        for opcion in NIVELES:
+            cfg = CAMPOS_MARCAS_P2[f"marca_{area}_{opcion}"]
+            if opcion == nivel:
+                escribir(page2, cfg, "X", bold=True, centrado=True)
+
+    # Potencial + oración final
+    for nombre, cfg in CAMPOS_TEXTO_P2.items():
+        valor = datos.get(nombre, "")
+        if valor:
+            valor = procesar_valor(nombre, valor)
+            centrado = nombre not in CAMPOS_IZQUIERDA
+            escribir(page2, cfg, valor,
+                     centrado=centrado,
+                     bold=(nombre == "potencial_puesto"))
 
     if not nombre_archivo:
-        n = salida.get("campo_nombre", "alumno").replace(" ", "_")
+        n = datos.get("campo_nombre", "alumno").replace(" ", "_")
         f = datetime.now().strftime("%Y%m%d_%H%M%S")
         nombre_archivo = f"{n}_{f}.pdf"
 
-    ruta_final = os.path.join(CARPETA, nombre_archivo)
-    ruta_temp = os.path.join(CARPETA, "_temp.pdf")
-
-    with open(ruta_temp, "wb") as f:
-        writer.write(f)
-
-    # 2. Rasterizar cada página a imagen → PDF 100% limpio
-    doc = fitz.open(ruta_temp)
-    nuevo = fitz.open()
-
-    for page in doc:
-        # 3x = ~216 dpi (buena calidad, tamaño razonable)
-        pix = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
-        nueva_pag = nuevo.new_page(width=page.rect.width, height=page.rect.height)
-        nueva_pag.insert_image(page.rect, pixmap=pix)
-
-    nuevo.save(ruta_final, garbage=4, deflate=True)
-    nuevo.close()
+    ruta = os.path.join(CARPETA, nombre_archivo)
+    doc.save(ruta, deflate=True)
     doc.close()
 
-    try:
-        os.remove(ruta_temp)
-    except Exception:
-        pass
-
-    print(f"✅ PDF generado (limpio): {ruta_final}")
-    return ruta_final
+    print(f"✅ PDF generado: {ruta}")
+    return ruta
 
 
 def rellenar_desde_json(ruta_json: str) -> str:
@@ -87,4 +117,6 @@ def rellenar_desde_json(ruta_json: str) -> str:
 
 
 if __name__ == "__main__":
+    print("🚀 Iniciando...")
     rellenar_desde_json("datos_ejemplo.json")
+    print("🏁 Terminado.")
