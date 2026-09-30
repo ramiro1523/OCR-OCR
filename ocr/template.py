@@ -568,3 +568,102 @@ def obtener_imagen_diff(scan_gris: np.ndarray) -> Optional[np.ndarray]:
     except Exception as e:
         logger.error("Error en obtener_imagen_diff: %s", e, exc_info=True)
         return None
+
+# =============================================================================
+# ADD-ON v2: TOLERANCIA DE DIMENSIONES + RESTAURACIÓN DE SHAPE
+# =============================================================================
+# PROBLEMA v1:
+#   El wrapper reescalaba el scan a la shape de la plantilla (3505), el
+#   diff se calculaba bien, pero salía con shape 3505. El pipeline compara
+#   contra la binaria (3509) y descartaba el diff por shape mismatch.
+#
+# FIX v2:
+#   Después de calcular el diff, se reescala DE VUELTA al shape original
+#   del scan. Así el pipeline recibe un diff de 3509 y todo cuadra.
+# =============================================================================
+
+TOLERANCIA_DIMENSIONES_PX = 150
+
+
+def obtener_imagen_diff_tolerante(scan_gris: np.ndarray) -> Optional[np.ndarray]:
+    """
+    Wrapper tolerante a variaciones de tamaño entre plantilla y scan.
+
+    Flujo:
+      1. Si la diferencia de tamaño <= ±150 px → reescala el scan a la
+         plantilla (en memoria, sin tocar archivos).
+      2. Llama a la función original que hace ECC/ORB + diff.
+      3. Si el diff sale con shape distinta al scan original, lo reescala
+         DE VUELTA al shape original para que pipeline.py lo acepte.
+      4. Si algo falla en cualquier paso → delega a la original.
+
+    Args:
+        scan_gris: imagen en escala de grises del escaneo.
+
+    Returns:
+        Diff binario con la MISMA shape que scan_gris, o None.
+    """
+    plantilla = cargar_plantilla()
+    if plantilla is None:
+        # Sin plantilla → comportamiento idéntico al original.
+        return obtener_imagen_diff(scan_gris)
+
+    try:
+        h_plantilla, w_plantilla = plantilla["gris"].shape[:2]
+        h_scan, w_scan = scan_gris.shape[:2]
+        scan_shape_original = scan_gris.shape
+
+        diff_h = abs(h_plantilla - h_scan)
+        diff_w = abs(w_plantilla - w_scan)
+
+        # 1. Reescalar scan a la plantilla si la diferencia es tolerable
+        if diff_h <= TOLERANCIA_DIMENSIONES_PX and diff_w <= TOLERANCIA_DIMENSIONES_PX:
+            if (h_plantilla, w_plantilla) != (h_scan, w_scan):
+                logger.info(
+                    "Tolerancia aplicada: scan %dx%d → plantilla %dx%d "
+                    "(diferencia %d x %d px, dentro de ±%d)",
+                    w_scan, h_scan, w_plantilla, h_plantilla,
+                    diff_w, diff_h, TOLERANCIA_DIMENSIONES_PX,
+                )
+                scan_para_alinear = cv2.resize(
+                    scan_gris,
+                    (w_plantilla, h_plantilla),
+                    interpolation=cv2.INTER_AREA,
+                )
+            else:
+                scan_para_alinear = scan_gris
+        else:
+            # Diferencia demasiado grande → no reescalar, dejar que la
+            # original intente (probablemente devolverá None).
+            logger.info(
+                "Dimensiones fuera de tolerancia (diff %d x %d px > ±%d). "
+                "Delegando sin reescalar.",
+                diff_w, diff_h, TOLERANCIA_DIMENSIONES_PX,
+            )
+            scan_para_alinear = scan_gris
+
+        # 2. Llamar a la función original con el scan (posiblemente) reescalado
+        diff = obtener_imagen_diff(scan_para_alinear)
+
+        # 3. Si el diff existe y su shape es distinta al scan ORIGINAL,
+        #    reescalarlo de vuelta al shape original.
+        if diff is not None and diff.shape != scan_shape_original:
+            logger.info(
+                "Restaurando shape del diff: %s → %s (shape original del scan)",
+                diff.shape, scan_shape_original,
+            )
+            diff = cv2.resize(
+                diff,
+                (scan_shape_original[1], scan_shape_original[0]),
+                interpolation=cv2.INTER_NEAREST,  # binaria, no interpolar
+            )
+
+        return diff
+
+    except Exception as e:
+        logger.error(
+            "Error en obtener_imagen_diff_tolerante: %s. "
+            "Delegando a la función original.",
+            e, exc_info=True,
+        )
+        return obtener_imagen_diff(scan_gris)

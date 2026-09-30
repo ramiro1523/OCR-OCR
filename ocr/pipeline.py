@@ -57,7 +57,7 @@ from ocr.marks import (
     calcular_distance_transform_score,
 )
 from vocacional.utils import generar_items_vacios, auditar_marcas
-from ocr.template import obtener_imagen_diff
+from ocr.template import obtener_imagen_diff_tolerante as obtener_imagen_diff
 
 logger = logging.getLogger(__name__)
 
