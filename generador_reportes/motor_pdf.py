@@ -1,5 +1,8 @@
-# app.py
-import json
+# motor_pdf.py
+"""
+Motor de generación de PDF usando PyMuPDF.
+Escribe directamente el texto sobre la plantilla (sin AcroForms, sin fondos azules).
+"""
 import os
 from datetime import datetime
 import pymupdf as fitz
@@ -18,7 +21,7 @@ CAMPOS_MAYUS = {"campo_areas", "campo_areas_2", "potencial_puesto"}
 CAMPOS_IZQUIERDA = {"campo_grado"}
 
 
-def escribir(page, cfg, valor, centrado=True, bold=False):
+def _escribir(page, cfg, valor, centrado=True, bold=False):
     x0 = cfg["x"]
     y0 = cfg["y"]
     ancho = cfg["width"]
@@ -29,11 +32,9 @@ def escribir(page, cfg, valor, centrado=True, bold=False):
     font = "hebo" if bold else "helv"
     txt = str(valor)
 
-    # ── Centrado vertical REAL ──
     y_top = page_h - y0 - alto
     y_base = y_top + (alto + fs * 0.7) / 2
 
-    # ── Posición X ──
     if centrado:
         tw = fitz.get_text_length(txt, fontname=font, fontsize=fs)
         x = x0 + (ancho - tw) / 2
@@ -49,7 +50,7 @@ def escribir(page, cfg, valor, centrado=True, bold=False):
     )
 
 
-def procesar_valor(nombre, valor):
+def _procesar_valor(nombre, valor):
     if valor is None:
         return ""
     valor = str(valor)
@@ -66,9 +67,24 @@ def procesar_valor(nombre, valor):
     return valor
 
 
-def rellenar(datos: dict, nombre_archivo: str = None) -> str:
-    os.makedirs(CARPETA, exist_ok=True)
-
+def generar_pdf(datos: dict, ruta_salida: str = None) -> str:
+    """
+    datos = {
+        "campo_nombre": "Ana Rozas Hucho",
+        "campo_edad": "16",
+        "campo_genero": "F",
+        "campo_fecha": "30/09/2026",
+        "campo_grado_instruccion": "5",
+        "campo_grado": "COMPLETA",
+        "campo_colegio": "SANTO DOMINGO DE PANGOA",
+        "niveles": {"liderazgo": "bajo", ...},
+        "potencial_puesto": "ALTO",
+        "campo_areas": "SOCIAL",
+        "campo_areas_2": "TÉCNICO MECÁNICO",
+        "campo_carreras": "CIENCIAS DE LA SALUD",
+        "campo_carreras_2": "ING AMBIENTAL",
+    }
+    """
     if not os.path.exists(PLANTILLA):
         raise FileNotFoundError(f"❌ No existe: {PLANTILLA}")
 
@@ -80,49 +96,35 @@ def rellenar(datos: dict, nombre_archivo: str = None) -> str:
     for nombre, cfg in CAMPOS_TEXTO_P1.items():
         valor = datos.get(nombre, "")
         if valor:
-            valor = procesar_valor(nombre, valor)
-            centrado = nombre not in CAMPOS_IZQUIERDA
-            escribir(page1, cfg, valor, centrado=centrado)
+            valor = _procesar_valor(nombre, valor)
+            _escribir(page1, cfg, valor,
+                      centrado=(nombre not in CAMPOS_IZQUIERDA))
 
-    # Marcas X
+    # Marcas "X"
     niveles = datos.get("niveles", {})
     for area in AREAS:
         nivel = (niveles.get(area) or "").lower()
         for opcion in NIVELES:
             cfg = CAMPOS_MARCAS_P2[f"marca_{area}_{opcion}"]
             if opcion == nivel:
-                escribir(page2, cfg, "X", bold=True, centrado=True)
+                _escribir(page2, cfg, "X", bold=True, centrado=True)
 
     # Potencial + oración final
     for nombre, cfg in CAMPOS_TEXTO_P2.items():
         valor = datos.get(nombre, "")
         if valor:
-            valor = procesar_valor(nombre, valor)
-            centrado = nombre not in CAMPOS_IZQUIERDA
-            escribir(page2, cfg, valor,
-                     centrado=centrado,
-                     bold=(nombre == "potencial_puesto"))
+            valor = _procesar_valor(nombre, valor)
+            _escribir(page2, cfg, valor,
+                      centrado=(nombre not in CAMPOS_IZQUIERDA),
+                      bold=(nombre == "potencial_puesto"))
 
-    if not nombre_archivo:
+    # Guardar
+    if not ruta_salida:
+        os.makedirs(CARPETA, exist_ok=True)
         n = datos.get("campo_nombre", "alumno").replace(" ", "_")
         f = datetime.now().strftime("%Y%m%d_%H%M%S")
-        nombre_archivo = f"{n}_{f}.pdf"
+        ruta_salida = os.path.join(CARPETA, f"{n}_{f}.pdf")
 
-    ruta = os.path.join(CARPETA, nombre_archivo)
-    doc.save(ruta, deflate=True)
+    doc.save(ruta_salida, deflate=True)
     doc.close()
-
-    print(f"✅ PDF generado: {ruta}")
-    return ruta
-
-
-def rellenar_desde_json(ruta_json: str) -> str:
-    with open(ruta_json, "r", encoding="utf-8") as f:
-        datos = json.load(f)
-    return rellenar(datos)
-
-
-if __name__ == "__main__":
-    print("🚀 Iniciando...")
-    rellenar_desde_json("datos_ejemplo.json")
-    print("🏁 Terminado.")
+    return ruta_salida

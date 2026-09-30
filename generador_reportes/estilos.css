@@ -1,0 +1,227 @@
+/* estilos.css — Diseño profesional Generador SOVIO */
+
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    color: #0f172a;
+}
+
+.main .block-container {
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+    max-width: 100%;
+}
+
+h1, h2, h3 {
+    color: #1e3a8a;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER DE PÁGINA
+   ═══════════════════════════════════════════════════════════ */
+.page-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.15);
+}
+.page-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: 600;
+}
+.page-header p {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    color: #dbeafe;
+}
+
+/* Contador */
+.counter {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1e3a8a;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #bfdbfe;
+    margin-bottom: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CABECERA DE COLUMNAS
+   ═══════════════════════════════════════════════════════════ */
+.col-header {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr 1.2fr 1.2fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 8px 8px 0 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+.col-header .manuscrita {
+    color: #c4b5fd;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FILAS DE ALUMNOS
+   ═══════════════════════════════════════════════════════════ */
+.fila-alumno {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr 1.2fr 1.2fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    align-items: center;
+    transition: background 0.15s;
+}
+.fila-alumno:hover {
+    background: #f8fafc;
+}
+.fila-alumno:last-of-type {
+    border-radius: 0 0 8px 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Nombre del alumno — azul marino, bien visible */
+.nombre-alumno {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e3a8a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 0;
+    letter-spacing: -0.1px;
+}
+
+/* Badge de potencial */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-left: 6px;
+}
+.badge-alto  { background: #d1fae5; color: #065f46; }
+.badge-medio { background: #fef3c7; color: #92400e; }
+.badge-bajo  { background: #fee2e2; color: #991b1b; }
+
+/* ═══════════════════════════════════════════════════════════
+   INPUTS COMPACTOS
+   ═══════════════════════════════════════════════════════════ */
+.stTextInput > div > div > input {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    border-radius: 5px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 1.2 !important;
+    color: #0f172a !important;
+    transition: all 0.15s !important;
+}
+.stTextInput > div > div > input:hover {
+    border-color: #93c5fd !important;
+}
+.stTextInput > div > div > input:focus {
+    border-color: #1e3a8a !important;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12) !important;
+    outline: none !important;
+}
+
+/* Espaciado */
+div[data-testid="column"] {
+    padding: 0 3px !important;
+}
+.stTextInput {
+    margin-bottom: 0 !important;
+}
+div[data-testid="stVerticalBlock"] > div {
+    gap: 0.1rem !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BOTONES
+   ═══════════════════════════════════════════════════════════ */
+.stButton > button {
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 0.55rem 1.3rem;
+    font-size: 13px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e3a8a;
+    transition: all 0.15s;
+}
+.stButton > button:hover {
+    background: #eff6ff;
+    border-color: #1e3a8a;
+    color: #1e3a8a;
+}
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
+}
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+    box-shadow: 0 3px 10px rgba(30, 58, 138, 0.35);
+}
+.stDownloadButton > button {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #ffffff;
+    border: none;
+    font-weight: 700;
+    padding: 0.8rem 2rem;
+    font-size: 14px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+.stDownloadButton > button:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    box-shadow: 0 3px 12px rgba(5, 150, 105, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD RESUMEN
+   ═══════════════════════════════════════════════════════════ */
+.resumen-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #059669;
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin-bottom: 16px;
+}
+.resumen-card h3 {
+    color: #065f46;
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+.resumen-card p {
+    color: #047857;
+    margin: 0;
+    font-size: 13px;
+}
+
+hr {
+    margin: 0.8rem 0;
+    border-color: #e2e8f0;
+}

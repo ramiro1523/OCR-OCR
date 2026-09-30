@@ -35,12 +35,12 @@ CAMPOS_TEXTO_P1 = {
     # ⇨ se movió +2 a la derecha
     "campo_genero":  {"x": 486.0, "y": 655.0, "width": 15.5,  "height": 12.5, "font_size": 7},
 
-    # ---------- DNI ----------
-    "campo_dni":     {"x": 187.0, "y": 628.0, "width": 42.0,  "height": 15.5, "font_size": 7},
+    # ---------- GRADO DE ISNTRUCCION ----------
+    "campo_grado_instruccion": {"x": 187.0, "y": 628.0, "width": 42.0, "height": 15.5, "font_size": 6.8},
 
-    # ---------- GRADO DE INSTRUCCIÓN ----------
+    # ---------- GRADO DE INSTRUCCIÓN  SI SECUNDARIA O NO ----------
     # ⇩ −1 abajo  |  ⇦ −3 izquierda
-    "campo_grado":   {"x": 301.5, "y": 629.7, "width": 47.0,  "height": 14.5, "font_size": 5.3},
+    "campo_grado":   {"x": 301.5, "y": 629.7, "width": 47.0,  "height": 14.5, "font_size": 5.3}, # SI ES SECUNDARIA COMPLETA O NO
 
     # ---------- SECUNDARIA (colegio/institución educativa) ----------
     # ⇧ +5 arriba  |  ⇨ +6 derecha
@@ -104,7 +104,7 @@ CAMPOS_MARCAS_P2 = {
 CAMPOS_TEXTO_P2 = {
 
     # ---------- POTENCIAL EMPRESARIAL (BAJO/MEDIO/ALTO) ----------
-    "potencial_puesto": {"x": 281.0, "y": 330.8, "width": 103.0, "height": 24.0, "font_size": 9.1, "alignment": 0},
+    "potencial_puesto": {"x": 267.5, "y": 331.056, "width": 103.0, "height": 24.0, "font_size": 8.4, "alignment": 0},
 
     # ---------- HUECOS DE LA ORACIÓN FINAL ----------
     # Línea 1: "…dentro de los tipos ____ y ____."
