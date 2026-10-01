@@ -18,7 +18,7 @@ import streamlit as st
 
 from parser_filename import parsear_filename
 from motor_pdf import generar_pdf
-from pipeline_vocacional import procesar_alumno
+from optimizador_ocr import procesar_alumno_optimizado as procesar_alumno
 from procesador import procesar_lote_paralelo
 from analizador_carreras import analizar_carreras_escritas
 

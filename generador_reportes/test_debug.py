@@ -9,7 +9,7 @@ from pipeline_vocacional import procesar_alumno
 
 
 # ─── Configura el PDF a probar ───
-RUTA = "James-Ramos-Legui_16_M.pdf"   # ← cambia al nombre real
+RUTA = "enzo-jimenez-rodriguez_16_M.pdf"   # ← cambia al nombre real
 SEXO = "M"                         # ← o "M"
 
 
