@@ -69,17 +69,32 @@ def fase_1_entrada():
     </div>
     """, unsafe_allow_html=True)
 
+    # C -----------------------------------------------------------------
+
     with st.form("form_datos_globales"):
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            ie = st.text_input("Institución Educativa",
-                               value="SANTO DOMINGO DE PANGOA")
+            ie = st.text_input(
+                "Institución Educativa (opcional)",
+                value="",
+                placeholder="Puede quedar vacío",
+            )
         with col2:
             fecha = st.date_input("Fecha de evaluación")
         with col3:
-            grado = st.selectbox("Grado", ["3", "4", "5"], index=2)
+            grado = st.selectbox(
+                "Grado (opcional)",
+                ["", "3", "4", "5"],
+                index=0,
+            )
         with col4:
-            nivel = st.selectbox("Nivel", ["COMPLETA", "INCOMPLETA"], index=0)
+            nivel = st.selectbox(
+                "Nivel",
+                ["COMPLETA", "INCOMPLETA"],
+                index=0,
+            )
+
+            # C------------------------------------------
 
         st.markdown("---")
 

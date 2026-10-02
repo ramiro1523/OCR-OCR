@@ -17,7 +17,13 @@ AREAS = ["liderazgo", "tecnico_mecanico", "social", "organizado",
          "artistico", "emprendimiento", "investigacion"]
 NIVELES = ["bajo", "medio", "alto"]
 
-CAMPOS_MAYUS = {"campo_areas", "campo_areas_2", "potencial_puesto"}
+CAMPOS_MAYUS = {
+    "campo_areas",
+    "campo_areas_2",
+    "potencial_puesto",
+    "campo_nombre",      # ← NUEVO: nombre del alumno en MAYÚSCULAS
+    "campo_colegio",     # ← NUEVO: nombre del colegio en MAYÚSCULAS
+}
 CAMPOS_IZQUIERDA = {"campo_grado"}
 
 
@@ -58,6 +64,8 @@ def _procesar_valor(nombre, valor):
     # Grado de instrucción: agregar "°" si no lo tiene
     if nombre == "campo_grado_instruccion":
         valor = valor.strip()
+        if not valor:              # ← si está vacío, devolver vacío
+            return ""
         if not valor.endswith("°"):
             valor = valor + "°"
         return valor
@@ -65,7 +73,6 @@ def _procesar_valor(nombre, valor):
     if nombre in CAMPOS_MAYUS:
         return valor.upper()
     return valor
-
 
 def generar_pdf(datos: dict, ruta_salida: str = None) -> str:
     """
